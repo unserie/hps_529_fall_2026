@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMART Objective Coach</title>
+<style>
+:root{--paper:#F5F3ED;--ink:#1E2A24;--soft:#4B5850;--line:#D8D4C8;--teal:#2F6E62;--tt:#DCE8E4;--sage:#3F7355;--st:#D9E9DC;--gold:#8A6414;--gt:#F0E1C0;--rust:#9A4D22;--rt:#F1DDCC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:24px}
+.wrap{max-width:780px;margin:auto}
+h1{font:400 26px Georgia,serif;margin:0 0 4px}
+h3{font:600 14px Georgia,serif;margin:0 0 6px}
+.sub{color:var(--soft);margin:0}
+.top{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--soft);border-radius:5px;padding:7px 13px}
+button.p{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+button:disabled{opacity:.55;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.voice{border-left:4px solid var(--teal)}
+.voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:6px}
+.voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+label{font-weight:600;display:block;margin:10px 0 4px}
+textarea,select{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:8px;background:#fff;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+select{width:auto}
+.chips{display:flex;gap:6px;margin:8px 0 10px}
+.chip{flex:1;text-align:center;padding:7px 0;border-radius:6px;font-size:11px;font-weight:700}
+.chip span{display:block;font-size:13px}
+.ok{background:var(--st);color:var(--sage)}.no{background:var(--rt);color:var(--rust)}.you{background:var(--gt);color:var(--gold)}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.rows li:first-child{border:0}
+.mk{flex:none;width:18px;font-weight:700}
+.rows button{padding:1px 8px;font-size:12px;margin-left:6px;white-space:nowrap}
+.ex{background:var(--st);border:1px solid #C4DAC8;border-radius:8px;padding:11px 13px;font-size:13px;margin-top:8px}
+.ex b{display:block;font-size:12px;color:var(--sage);margin-bottom:3px}
+.note{font-size:12px;color:var(--soft)}
+</style></head><body><div class="wrap">
+<div class="top"><h1>SMART Objective Coach</h1>
+<p class="sub">Paste a draft objective (and its indicator, if you have one) and check it as many times as you like before you submit.</p></div>
+
+<div class="card voice"><button id="hearIntro">▶ Hear the instructor's intro</button>
+<details><summary>Transcript</summary><p id="tIntro"></p></details></div>
+
+<div class="card">
+<label for="typ">What kind of objective is this?</label>
+<select id="typ"><option value="process">Process (what you will do)</option><option value="outcome">Outcome (change you expect)</option></select>
+<label for="obj">Your draft objective</label>
+<textarea id="obj" placeholder="e.g., By December 2027, at least 200 adults aged 40+ in [County] who attended the program will report a 25% increase in knowledge of diabetes risk factors."></textarea>
+<label for="ind">Your indicator for this objective (optional)</label>
+<textarea id="ind" placeholder="e.g., Percent change in mean knowledge score, pre/post survey, among participants aged 40+ in [County], December 2027."></textarea>
+<p style="margin:12px 0 0"><button class="p" id="go">Check it</button> <span class="note" id="cnt"></span></p>
+</div>
+
+<div class="card" id="res" hidden aria-live="polite">
+<h3>How it holds up</h3><div class="chips" id="chips"></div><ul class="rows" id="rows"></ul>
+<div id="indBox" hidden><h3 style="margin-top:14px">Indicator alignment</h3><ul class="rows" id="indRows"></ul></div>
+<p class="note" style="margin-top:12px">This coach looks for patterns in your wording. It cannot judge meaning, and a clean check does not guarantee a grade. Attainable and Realistic are yours to judge, so the coach asks questions instead of scoring them.</p>
+</div>
+
+<div class="card" id="exBox" hidden><h3>See a worked example</h3>
+<p class="note" id="exLock">Revise and check again to unlock a worked example on a different topic, so you learn the pattern without copying it.</p>
+<button id="exBtn" hidden>Show the example</button>
+<div id="exOut" hidden>
+<div class="ex"><b>Process objective</b>By March 2027, trained staff will deliver 8 falls-prevention classes to at least 120 adults aged 60+ in [Town].</div>
+<div class="ex"><b>Outcome objective</b>By June 2027, at least 120 adults aged 60+ in [Town] who attended the classes will report a 20% increase in confidence doing balance exercises.</div>
+<div class="ex"><b>Its indicator</b>Percent change in mean balance-confidence score (pre vs. post survey) among class attendees aged 60+ in [Town], June 2027.</div></div>
+</div>
+</div>
+<script>
+/* ---- Letter labels follow the assignment wording. The lecture slides use other words for A and R; change here after the instructor confirms. ---- */
+const L={s:'Specific',m:'Measurable',a:'Attainable',r:'Realistic',t:'Time-bound'};
+/* ---- INSTRUCTOR AUDIO: mp3 path per slot (same Course Files folder). Empty = computer-voice demo. ---- */
+const AUDIO={intro:"",s:"",m:"",a:"",r:"",t:"",i:""};
+const SCRIPT={
+ intro:"Objectives answer five questions: who, what, where, how much, and by when. Write a draft, check it, and revise. You can check as many times as you like. Attainable and Realistic are judgment calls, so the coach will ask you questions instead of giving a grade.",
+ s:"Specific means a reader could picture exactly who does what, and where. Name the population, the action, and the place.",
+ m:"Measurable means a number. How many people, how many sessions, or what percent change? If you can't count it, you can't show it happened.",
+ a:"Attainable asks whether your team can actually do this with the resources and time you have. Check your inputs in the logic model.",
+ r:"Realistic asks whether this result is plausible given the evidence and your community. Don't promise more than a program like yours can deliver.",
+ t:"Time-bound means a deadline. A calendar date is clearest. If you use a program length instead, say when it starts.",
+ i:"Your indicator is how you will know the objective was met. It should use the same people, the same measure, and the same timeframe."};
+function speak(k){try{speechSynthesis.cancel()}catch(e){}
+ if(AUDIO[k]){new Audio(AUDIO[k]).play();return}
+ if('speechSynthesis' in window)speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]))}
+const $=id=>document.getElementById(id);
+$('tIntro').textContent=SCRIPT.intro;$('hearIntro').onclick=()=>speak('intro');
+
+const MON='(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*';
+const WHO=/\b(adults?|youth|women|men|children|kids|residents?|patients?|students?|parents?|families|caregivers?|workers?|chws?|staff|participants?|mothers|adolescents?|teens?|seniors?|elders?|older|clients|people|farmers|teachers|nurses|providers|households|community members)\b/i;
+const WHERE=/\b(in|at|across|within|throughout)\s+(the\s+)?[A-Z\[][\w\[\]]+|\b(county|district|village|clinic|school|neighborhood|region|town|city|province|parish|ward|reservation)\b/;
+const VERB=/\b(conduct|deliver|hold|host|train|recruit|distribute|screen|enroll|reach|provide|offer|complete|develop|establish|implement|increase|decrease|reduce|improve|report|demonstrate|adopt|attend|receive|achieve|identify|refer|create|publish|hire|launch|produce|hold|organize|gain|show|use|practice)\w*/i;
+const VAGUE=/\b(raise|increase|improve|enhance|promote|strengthen|foster|boost)\s+(the\s+)?(awareness|understanding|health|knowledge|quality|access|wellbeing|well-being)\b/i;
+const CHANGE=/\b(increase|decrease|reduce|improv|report|demonstrate|adopt|gain|lower|raise|change|higher)/i;
+const DOING=/\b(conduct|deliver|hold|host|train|recruit|distribute|hire|launch|organize|develop|establish|create|publish|provide|offer)\w*/i;
+const LONGT=/\b(mortality|incidence|prevalence|death|deaths|complication|life expectancy|poverty|obesity rates?)\b/i;
+function clean(t){return t.replace(new RegExp('\\b'+MON+'\\.?(\\s+\\d{1,2},?)?(\\s+(19|20)\\d\\d)?','gi'),' ').replace(/\b(19|20)\d\d\b/g,' ')
+ .replace(/\b\d+[- ]?(weeks?|months?|years?|days?)\b/gi,' ').replace(/\b(aged?|ages?)\s*\d+(\s*(-|–|to|and)\s*\d+|\+)?/gi,' ').replace(/\b\d{2}\+/g,' ')}
+function months(t){const m=t.match(/(\d+)[- ]?(week|month|year)/i);if(!m)return null;const n=+m[1];return /week/i.test(m[2])?n/4.3:/year/i.test(m[2])?n*12:n}
+
+function check(t,type){
+ const nd=clean(t),R=[];
+ const who=WHO.test(t),where=WHERE.test(t),verb=VERB.test(t),vague=VAGUE.test(t),num=/\d/.test(nd)||/\b(all|half|every|majority|most)\b/i.test(nd);
+ const miss=[];if(!who)miss.push('who (the specific group)');if(!verb)miss.push('what (an action you can observe)');if(!where)miss.push('where (place or setting)');
+ let s={k:'s'};
+ if(miss.length){s.st='no';s.tx='Missing: '+miss.join(', ')+'. Who exactly, doing what, and where?'}
+ else if(vague){s.st='no';s.tx='"'+t.match(VAGUE)[0]+'" is vague. Awareness of what? What will people know or do differently, and how would you see it?'}
+ else{s.st='ok';s.tx='Names who, what, and where.'}
+ R.push(s);
+ const m={k:'m'};
+ if(num){m.st='ok';m.tx='Includes a number or amount you can count.'}else{m.st='no';m.tx='No number found. How many people or sessions, or what percent change? If you\'d write "increase," say by how much.'}
+ R.push(m);
+ const pct=Math.max(0,...(t.match(/(\d+)\s*%/g)||[]).map(x=>parseInt(x))),big=Math.max(0,...((nd.match(/\d[\d,]*/g)||[]).map(x=>+x.replace(/,/g,''))));
+ const a={k:'a'};
+ if(/\b(all|every|100\s*%|eliminate|eradicate|zero|end)\b/i.test(nd)||pct>=80||big>=5000){a.st='no';a.tx='This target looks very ambitious. Can your team, budget and timeline really deliver it? Which input in your logic model makes it possible?'}
+ else{a.st='you';a.tx='You decide: can your team deliver this with the resources and time you have? Point to the inputs that make it possible.'}
+ R.push(a);
+ const mo=months(t),r={k:'r'};
+ if(LONGT.test(t)&&(mo===null||mo<=24)){r.st='no';r.tx='Changes in rates like incidence or mortality usually take longer than a short project and are hard to credit to one program. Consider a nearer-term outcome.'}
+ else if(type==='outcome'&&!CHANGE.test(t)){r.st='no';r.tx='You marked this an outcome, but no change is described. What will be different in the people you serve?'}
+ else if(type==='process'&&CHANGE.test(t)&&!DOING.test(t)){r.st='you';r.tx='This reads like an outcome (a change). If it is, switch the type above. Either way, ask: is it plausible given the evidence you found?'}
+ else{r.st='you';r.tx='You decide: is this plausible given your evidence and community, and within your program\'s purpose and population?'}
+ if(type==='process'&&CHANGE.test(t)&&!DOING.test(t)&&r.st==='you'){}
+ R.push(r);
+ const cal=new RegExp('\\b'+MON+'\\b|\\b(19|20)\\d\\d\\b','i').test(t),rel=/\b(by|within|during|before|over)\b[^.]*\b(\d+[- ]?(weeks?|months?|years?|days?)|end of|semester|quarter|program|intervention|project|week\s*\d+)/i.test(t),tt={k:'t'};
+ if(cal){tt.st='ok';tt.tx='Includes a calendar date.'}
+ else if(rel){tt.st='you';tt.tx='You used a program length, not a date. That can work if the start is clear. A calendar date ("By June 2027") is the safer pattern.'}
+ else{tt.st='no';tt.tx='No deadline found. By when will this happen?'}
+ R.push(tt);
+ if(type==='outcome'&&DOING.test(t)&&!CHANGE.test(t))s.tx+=' Note: this reads like a process objective. Check the type.';
+ return R}
+
+function align(o,i){
+ const R=[],ni=clean(i),no=clean(o);
+ R.push(/\d/.test(ni)||/\b(percent|proportion|number of|rate|score)\b/i.test(i)?['ok','Has a number or measurable quantity.']:['no','No number or measure found. What exactly will you count or score?']);
+ R.push(/\b(number of|percent|proportion|%|score|survey|pre\/?post|questionnaire|attendance|records|log|sign-in|observation|interview|report)/i.test(i)?['ok','Names something you can see, count or collect.']:['no','What can you see, hear or collect to show this? (a survey score, sign-in sheets, clinic records)']);
+ const w=s=>new Set((s.toLowerCase().match(/[a-z]{5,}/g)||[]).filter(x=>!/^(their|there|which|among|about|would|other|these|those|percent|number|before|after|during|within|will|least)$/.test(x)));
+ const A=w(o),B=w(i),sh=[...A].filter(x=>B.has(x));
+ R.push(sh.length>=2?['ok','Shares key words with the objective ('+sh.slice(0,4).join(', ')+').']:['no','Few shared words with the objective. Does it name the same people, place and change?']);
+ const on=(no.match(/\d[\d,.]*/g)||[]).map(x=>x.replace(/,/g,'')),inn=(ni.match(/\d[\d,.]*/g)||[]).map(x=>x.replace(/,/g,''));
+ if(on.length&&inn.length&&!on.some(x=>inn.includes(x)))R.push(['you','Your objective and indicator use different numbers. Is that intentional, or should the target match?']);
+ const ct=new RegExp('\\b'+MON+'\\b|\\b(19|20)\\d\\d\\b|\\b\\d+[- ]?(weeks?|months?|years?)','i');
+ R.push(ct.test(i)?['ok','Includes a timeframe.']:['no','No timeframe. When will you measure it?']);
+ return R}
+
+let n=0;const M={ok:'✓',no:'!',you:'?'};
+function li(st,tx,k){const e=document.createElement('li');
+ e.innerHTML='<span class="mk '+st+'" style="background:none">'+M[st]+'</span><span></span>';
+ e.lastChild.textContent=tx;
+ if(k&&st!=='ok'){const b=document.createElement('button');b.textContent='▶ Hear tip';b.onclick=()=>speak(k);e.lastChild.appendChild(b)}
+ return e}
+$('go').onclick=()=>{
+ const o=$('obj').value.trim();if(o.length<15){$('obj').focus();return}
+ const R=check(o,$('typ').value),ch=$('chips'),rw=$('rows');ch.innerHTML='';rw.innerHTML='';
+ R.forEach(x=>{const c=document.createElement('div');c.className='chip '+x.st;c.innerHTML='<span>'+x.k.toUpperCase()+'</span>'+L[x.k]+' '+M[x.st];ch.appendChild(c);
+  rw.appendChild(li(x.st,L[x.k]+': '+x.tx,x.k))});
+ const i=$('ind').value.trim(),ib=$('indBox');
+ if(i){const ir=$('indRows');ir.innerHTML='';align(o,i).forEach(a=>ir.appendChild(li(a[0],a[1],'i')));ib.hidden=false}else ib.hidden=true;
+ $('res').hidden=false;$('exBox').hidden=false;n++;$('cnt').textContent='Checks so far: '+n;
+ if(n>=2){$('exLock').hidden=true;$('exBtn').hidden=false}
+ $('res').scrollIntoView({behavior:'smooth',block:'nearest'})};
+$('exBtn').onclick=()=>{$('exOut').hidden=false;$('exBtn').hidden=true};
+</script></body></html>
