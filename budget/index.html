@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Budget Visualizer</title>
+<style>
+:root{--paper:#F5F3ED;--ink:#1E2A24;--soft:#4B5850;--line:#D8D4C8;--teal:#2F6E62;--tt:#DCE8E4;--sage:#3F7355;--st:#D9E9DC;--gold:#8A6414;--gt:#F0E1C0;--rust:#9A4D22;--rt:#F1DDCC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:24px}
+.wrap{max-width:1040px;margin:auto}
+h1{font:400 26px Georgia,serif;margin:0 0 4px}
+h3{font:600 14px Georgia,serif;margin:0 0 6px}
+.sub,.note{color:var(--soft);margin:0}.note{font-size:12px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--soft);border-radius:5px;padding:6px 12px}
+button.p{background:var(--teal);border-color:var(--teal);color:#fff}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.voice{border-left:4px solid var(--teal)}
+.voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:6px}
+.voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:5px;padding:5px 6px;background:#fff;color:var(--ink);width:100%}
+textarea{min-height:56px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px}
+th{text-align:left;font-size:11.5px;color:var(--soft);padding:0 4px 6px;border-bottom:1px solid var(--line)}
+td{padding:4px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap}
+.amt{font-weight:700;padding-top:9px}
+.warn{color:var(--rust);font-size:11px}
+.main{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
+.donut{width:190px;height:190px;border-radius:50%;margin:auto;position:relative;background:#EDEAE1}
+.donut::after{content:"";position:absolute;inset:36px;border-radius:50%;background:var(--card)}
+.dc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;text-align:center}
+.dc b{font:600 18px Georgia,serif}
+.lg{margin-top:12px;font-size:12px}
+.lg div{display:flex;gap:7px;align-items:center;padding:2px 0}
+.lg i{width:10px;height:10px;border-radius:2px;flex:none}.lg span{flex:1}
+.rows{list-style:none;margin:0;padding:0;font-size:13px}
+.rows li{display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.rows li:first-child{border:0}
+.mk{width:18px;flex:none;font-weight:700}
+.ok{color:var(--sage)}.no{color:var(--rust)}.you{color:var(--gold)}
+.rows button{padding:1px 8px;font-size:12px;margin-left:6px}
+#out{display:none;width:100%;min-height:140px;margin-top:8px}
+@media(max-width:760px){.main,.grid{grid-template-columns:1fr}}
+@media print{button,.card.voice,.noprint{display:none!important}body{padding:0}}
+</style></head><body><div class="wrap">
+<div class="top"><div><h1>Budget Visualizer</h1>
+<p class="sub">Enter your line items, see the shape of your budget, and fix problems before you write the justification.</p></div>
+<div class="noprint"><button id="ex">Load an example</button> <button id="clr">Start over</button></div></div>
+
+<div class="card voice"><button id="hearIntro">▶ Hear the instructor's intro</button>
+<details><summary>Transcript</summary><p id="tIntro"></p></details></div>
+
+<div class="card grid">
+<div><label for="inp"><b>Your logic model inputs</b> (one per line)</label>
+<textarea id="inp" placeholder="Trained community health workers&#10;Mobile screening van"></textarea>
+<p class="note">Your budget should cover each input. Link line items to inputs in the last column.</p></div>
+<div><label for="fund"><b>Total funding available ($, optional)</b></label><input id="fund" type="number" min="0" placeholder="e.g., 60000">
+<label for="rate" style="display:block;margin-top:8px"><b>Indirect cost rate (%)</b></label><input id="rate" type="number" min="0" value="10">
+<label for="base" style="display:block;margin-top:8px"><b>Indirect rate applies to</b></label>
+<select id="base"><option value="mtdc">Modified total direct costs (excludes equipment and incentives)</option><option value="all">All direct costs</option></select></div></div>
+
+<div class="card"><h3>Line items</h3><div class="tw"><table><thead><tr>
+<th>Category</th><th>Item</th><th class="n">Quantity</th><th class="n">Unit cost ($)</th><th class="n">Periods</th><th>Cost basis (how you got the number)</th><th>Supports input</th><th class="n">Amount</th><th></th></tr></thead>
+<tbody id="tb"></tbody></table></div>
+<p style="margin:10px 0 0"><button class="p" id="add">+ Add line item</button> <span class="note">Amount = quantity × unit cost × periods (months, years, trips).</span></p></div>
+
+<div class="main card"><div><div class="donut" id="dn" role="img" aria-label="Budget breakdown by category"><div class="dc"><b id="tot">$0</b><span class="note">Total request</span></div></div><div class="lg" id="lg"></div></div>
+<div class="tw"><table style="min-width:0"><thead><tr><th>Category</th><th class="n">Share</th><th class="n">Amount</th></tr></thead><tbody id="ct"></tbody></table></div></div>
+
+<div class="card"><h3>Automated checks</h3><ul class="rows" id="ck" aria-live="polite"></ul>
+<p class="note" style="margin-top:10px">Checks follow the KU Community Tool Box budgeting guide and the federal de minimis indirect rule. Your instructor's rubric and your funder's rules come first.</p></div>
+
+<div class="noprint"><button class="p" id="print">Print / save as PDF</button> <button id="copy">Copy table (paste into Excel)</button>
+<span class="note">Nothing is saved or sent. Copy your table into the Excel file you submit.</span><textarea id="out" readonly aria-label="Tab-separated budget"></textarea></div>
+<div class="card voice" style="margin-top:14px"><button id="hearDone">▶ Hear the instructor's wrap-up</button>
+<details><summary>Transcript</summary><p id="tDone"></p></details></div>
+</div>
+<script>
+/* ---- RULES: temporary defaults. Replace with the instructor's numbers. personnelRange: null = no check. ---- */
+const RULES={indirectMax:15,personnelRange:null};
+/* ---- INSTRUCTOR AUDIO: mp3 path per slot (same Course Files folder). Empty = computer-voice demo. ---- */
+const AUDIO={intro:"",basis:"",indirect:"",done:""};
+const SCRIPT={
+ intro:"Build your budget from your logic model inputs. Every line needs a quantity, a unit cost, and a basis, so a reader can see how you got the number. Use the checks to fix problems now, then write your justification.",
+ basis:"Every line needs a cost basis. For example, an hourly rate times hours per week times weeks. If you can't show how you got the number, a reviewer can't trust it.",
+ indirect:"Indirect costs pay for overhead. Rates are set by your funder or your institution, and they apply to a defined base. Check which rate and which base your assignment expects.",
+ done:"Now read your budget against your logic model. Does every input have money behind it? Does every dollar connect to an activity? Your justification should explain that story in half a page."};
+function speak(k){try{speechSynthesis.cancel()}catch(e){}
+ if(AUDIO[k]){new Audio(AUDIO[k]).play();return}
+ if('speechSynthesis' in window)speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]))}
+const $=id=>document.getElementById(id);
+$('tIntro').textContent=SCRIPT.intro;$('tDone').textContent=SCRIPT.done;
+$('hearIntro').onclick=()=>speak('intro');$('hearDone').onclick=()=>speak('done');
+
+const CATS=[['per','Personnel','#2F6E62'],['trv','Travel','#5C8A6E'],['ops','Operations','#A9A24E'],['sup','Supplies','#C99A3B'],['eqp','Equipment','#B5602F'],['svc','Related services & activities','#5E7690'],['inc','Participant incentives','#8A5A8C']];
+const IND=['ind','Indirect costs','#7A7A7A'];
+const $$=n=>CATS.find(c=>c[0]===n);
+let R=[],uid=1;
+const money=n=>'$'+Math.round(n).toLocaleString();
+function inputs(){return $('inp').value.split('\n').map(s=>s.trim()).filter(Boolean)}
+function newRow(o){R.push(Object.assign({id:uid++,cat:'per',item:'',q:'',c:'',p:1,b:'',inp:''},o||{}))}
+function amt(r){return (+r.q||0)*(+r.c||0)*(+r.p||0)}
+function build(){
+ const tb=$('tb');tb.innerHTML='';
+ R.forEach(r=>{
+  const tr=document.createElement('tr');
+  const sel=(k,opts,v)=>'<select data-k="'+k+'" aria-label="'+k+'">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  tr.innerHTML='<td>'+sel('cat',CATS.map(c=>[c[0],c[1]]),r.cat)+'</td>'
+  +'<td><input data-k="item" aria-label="Item" value=""></td>'
+  +'<td class="n"><input data-k="q" type="number" min="0" aria-label="Quantity" style="width:80px"></td>'
+  +'<td class="n"><input data-k="c" type="number" min="0" step="any" aria-label="Unit cost" style="width:95px"></td>'
+  +'<td class="n"><input data-k="p" type="number" min="0" step="any" aria-label="Periods" style="width:70px"></td>'
+  +'<td><input data-k="b" aria-label="Cost basis" placeholder="e.g., $17/hr × 20 hrs/wk × 52 wks"></td>'
+  +'<td>'+sel('inp',[['','(none)']].concat(inputs().map(x=>[x,x])),r.inp)+'</td>'
+  +'<td class="n amt" id="a'+r.id+'"></td><td><button aria-label="Remove line item">✕</button></td>';
+  ['item','q','c','p','b'].forEach(k=>tr.querySelector('[data-k="'+k+'"]').value=r[k]);
+  tr.querySelectorAll('[data-k]').forEach(el=>{el.oninput=el.onchange=()=>{r[el.dataset.k]=el.value;calc()}});
+  tr.querySelector('button').onclick=()=>{R=R.filter(x=>x!==r);build();calc()};
+  tb.appendChild(tr)});
+ calc()}
+function chk(st,tx,k){return{st,tx,k}}
+function calc(){
+ const T={};CATS.forEach(c=>T[c[0]]=0);
+ R.forEach(r=>{const a=amt(r);T[r.cat]+=a;const e=$('a'+r.id);if(e)e.textContent=money(a)});
+ const direct=CATS.reduce((s,c)=>s+T[c[0]],0),rate=+$('rate').value||0;
+ const base=$('base').value==='mtdc'?direct-T.eqp-T.inc:direct,indirect=base*rate/100,total=direct+indirect;
+ const rows=CATS.map(c=>[c[1],c[2],T[c[0]]]).concat([[IND[1],IND[2],indirect]]);
+ let acc=0;const seg=[];rows.forEach(x=>{if(total>0&&x[2]>0){const a=acc/total*100;acc+=x[2];seg.push(x[1]+' '+a+'% '+(acc/total*100)+'%')}});
+ $('dn').style.background=seg.length?'conic-gradient('+seg.join(',')+')':'#EDEAE1';
+ $('tot').textContent=money(total);
+ $('lg').innerHTML=rows.filter(x=>x[2]>0).map(x=>'<div><i style="background:'+x[1]+'"></i><span>'+x[0]+'</span><b>'+Math.round(x[2]/total*100)+'%</b></div>').join('');
+ $('ct').innerHTML=rows.map(x=>'<tr><td>'+x[0]+'</td><td class="n">'+(total?Math.round(x[2]/total*100):0)+'%</td><td class="n">'+money(x[2])+'</td></tr>').join('')+'<tr><td><b>Total</b></td><td></td><td class="n"><b>'+money(total)+'</b></td></tr>';
+ const C=[],miss=R.filter(r=>r.item||amt(r)>0);
+ const noBasis=miss.filter(r=>!r.b.trim()||!(+r.q>0)||!(+r.c>0));
+ if(!R.length)C.push(chk('you','Add your first line item to start the checks.'));
+ else{
+  C.push(noBasis.length?chk('no',noBasis.length+' line item(s) are missing a quantity, unit cost or cost basis: '+noBasis.map(r=>r.item||'(unnamed)').join(', ')+'.','basis'):chk('ok','Every line item has a quantity, unit cost and cost basis.'));
+  if(T.per>0&&!R.some(r=>r.cat==='per'&&/fringe/i.test(r.item)))C.push(chk('you','You list personnel but no fringe benefits line. The KU Community Tool Box says employer taxes and benefits typically add about 12–15% to payroll, even with no formal benefits.'));
+  if(rate>RULES.indirectMax)C.push(chk('no','Indirect rate is '+rate+'%, above '+RULES.indirectMax+'%, the federal de minimis ceiling (of modified total direct costs). Your funder or instructor may set a different limit. Revisit before finalizing.','indirect'));
+  else C.push(chk('ok','Indirect rate ('+rate+'%) is at or under '+RULES.indirectMax+'%. Confirm the rate and base your assignment expects.','indirect'));
+  if(RULES.personnelRange&&direct>0){const sh=T.per/direct*100,[lo,hi]=RULES.personnelRange;C.push(sh<lo||sh>hi?chk('you','Personnel is '+Math.round(sh)+'% of direct costs, outside the '+lo+'–'+hi+'% range.'):chk('ok','Personnel share is within '+lo+'–'+hi+'%.'))}
+  const I=inputs();
+  if(I.length){const un=I.filter(x=>!R.some(r=>r.inp===x));C.push(un.length?chk('no','No budget line supports these logic model inputs: '+un.join('; ')+'.'):chk('ok','Every logic model input has at least one budget line.'))}
+  else C.push(chk('you','Paste your logic model inputs above to check that each one is funded.'));
+  const orph=R.filter(r=>amt(r)>0&&!r.inp);
+  if(I.length&&orph.length)C.push(chk('you',orph.length+' line item(s) are not linked to an input: '+orph.map(r=>r.item||'(unnamed)').join(', ')+'. Is each one needed for your program?'));
+  const f=+$('fund').value;
+  if(f>0){const d=total-f;C.push(Math.abs(d)<=f*.02?chk('ok','Your budget is about equal to your available funding (balanced).'):d>0?chk('no','Your budget is '+money(d)+' over your available funding (a deficit). Cut costs or find more funding.'):chk('you','Your budget is '+money(-d)+' under your available funding (a surplus). Is anything missing?'))}
+  if(!R.some(r=>/misc|contingen/i.test(r.item)))C.push(chk('you','No contingency line. The KU guide suggests a small allowance for the unexpected, and estimating expenses high rather than low.'));
+ }
+ const M={ok:'✓',no:'!',you:'?'};
+ $('ck').innerHTML='';C.forEach(c=>{const li=document.createElement('li');li.innerHTML='<span class="mk '+c.st+'">'+M[c.st]+'</span><span></span>';
+  li.lastChild.textContent=c.tx;if(c.k&&c.st!=='ok'||c.k==='indirect'){const b=document.createElement('button');b.textContent='▶ Hear tip';b.onclick=()=>speak(c.k);li.lastChild.appendChild(b)}
+  $('ck').appendChild(li)});
+ window._t=total}
+['rate','base','fund'].forEach(i=>$(i).oninput=$(i).onchange=calc);
+$('inp').onchange=build;
+$('add').onclick=()=>{newRow();build()};
+$('clr').onclick=()=>{if(confirm('Clear everything?')){R=[];$('inp').value='';$('fund').value='';$('rate').value=10;newRow();build()}};
+$('ex').onclick=()=>{R=[];$('inp').value='Trained community health workers\nMobile screening van\nFree A1C screening events\nPartner clinic referrals';$('rate').value=18;$('fund').value=90000;
+ [{cat:'per',item:'Community health worker (part-time)',q:2,c:12000,p:2,b:'$12,000/yr each × 2 CHWs × 2 yrs',inp:'Trained community health workers'},
+ {cat:'per',item:'Fringe benefits',q:1,c:5760,p:1,b:'12% of CHW salaries',inp:'Trained community health workers'},
+ {cat:'trv',item:'Mileage for van outreach',q:4000,c:0.7,p:1,b:'4,000 miles × $0.70/mile',inp:'Mobile screening van'},
+ {cat:'sup',item:'A1C test kits',q:500,c:8,p:1,b:'',inp:'Free A1C screening events'},
+ {cat:'eqp',item:'Mobile screening van lease',q:1,c:900,p:24,b:'$900/month × 24 months',inp:'Mobile screening van'},
+ {cat:'inc',item:'Gift cards for screened residents',q:500,c:10,p:1,b:'$10 × 500 residents',inp:'Free A1C screening events'},
+ {cat:'svc',item:'Referral coordination agreement',q:1,c:3000,p:1,b:'flat rate per partner agreement',inp:''}].forEach(newRow);build()};
+$('print').onclick=()=>window.print();
+$('copy').onclick=()=>{let t='Category\tItem\tQuantity\tUnit cost\tPeriods\tAmount\tCost basis\n';
+ R.forEach(r=>{t+=[$$(r.cat)[1],r.item,r.q,r.c,r.p,amt(r),r.b].join('\t')+'\n'});
+ t+='Indirect costs\t\t\t\t\t'+Math.round((window._t||0)-R.reduce((s,r)=>s+amt(r),0))+'\t'+$('rate').value+'% ('+($('base').value==='mtdc'?'MTDC':'all direct')+')\nTotal\t\t\t\t\t'+Math.round(window._t||0)+'\n';
+ const o=$('out');o.value=t;o.style.display='block';o.select();try{navigator.clipboard.writeText(t)}catch(e){}};
+window.onbeforeunload=e=>{if(R.some(r=>r.item||r.q)){e.preventDefault();e.returnValue=''}};
+newRow();build();
+</script></body></html>
