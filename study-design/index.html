@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Study Design Sandbox</title>
+<style>
+:root{--paper:#F5F3ED;--ink:#1E2A24;--soft:#4B5850;--line:#D8D4C8;--teal:#2F6E62;--sage:#3F7355;--st:#D2E4D6;--gold:#C99A3B;--gt:#F0E1C0;--rust:#9A4D22;--rt:#F1DDCC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:24px}
+.wrap{max-width:880px;margin:auto}
+h1{font:400 26px Georgia,serif;margin:0 0 4px}
+h3{font:600 14px Georgia,serif;margin:0 0 4px}
+.sub{color:var(--soft);margin:0}
+.top{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.tag{display:inline-block;background:var(--st);color:var(--sage);border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:600;margin-bottom:6px}
+.row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:18px 0}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--card)}
+.seg button{border:0;border-right:1px solid var(--line);background:none;padding:9px 18px;font:600 13px inherit;color:var(--soft);cursor:pointer}
+.seg button:last-child{border:0}
+.seg button[aria-pressed=true]{background:var(--teal);color:#fff}
+button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.badge{font-size:12px;font-weight:700;padding:4px 11px;border-radius:20px}
+.high{background:var(--rt);color:var(--rust)}.low{background:var(--st);color:var(--sage)}
+.main{display:grid;grid-template-columns:1fr 300px;gap:20px}
+.bar{margin-bottom:14px}
+.bl{display:flex;justify-content:space-between;margin-bottom:5px}
+.bt{background:#EDEAE1;border-radius:5px;height:14px;overflow:hidden}
+.bf{height:100%;border-radius:5px;transition:width .4s}
+.gap{border-top:1px solid var(--line);padding-top:12px;margin-top:6px;display:flex;justify-content:space-between;align-items:baseline}
+.gap b{font:600 22px Georgia,serif}
+.side{border-top:3px solid var(--gold)}
+.side p{color:var(--soft);margin:0}
+.hf{margin-top:10px;padding:10px 12px;background:var(--gt);border-radius:6px;font-size:12.5px;color:#5c4718}
+.voice{border-left:4px solid var(--teal);margin-top:16px}
+.voice button{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:7px 13px;color:var(--soft);cursor:pointer;font:inherit}
+.voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:8px}
+.voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+label{display:block;font-weight:600;margin-top:16px}
+textarea{width:100%;min-height:70px;margin-top:6px;border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}
+@media(max-width:760px){.main{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<div class="top"><h1>Study Design Sandbox</h1>
+<p class="sub">Same clinic, same patients, same program. Only the way people end up in the program group changes.</p></div>
+
+<div class="card"><span class="tag">Hypothetical data</span>
+<p style="margin:0">Researchers want to know whether the mobile screening and coaching program lowers A1C, or whether the people it reaches would have improved anyway. One clinic serves 400 similar patients. Pick how the program group is formed and watch the result.</p></div>
+
+<div class="row"><span>How is the program group formed?</span>
+<div class="seg" role="group" aria-label="Group assignment">
+<button id="bSelf" aria-pressed="true">Patients choose to join</button>
+<button id="bRand" aria-pressed="false">Assigned by lottery</button></div>
+<span class="badge high" id="badge" aria-live="polite">Confounding risk: High</span></div>
+
+<div class="main">
+<div class="card"><h3>Average A1C change at 6 months</h3>
+<p class="sub" id="rs" style="margin-bottom:14px"></p>
+<div class="bar"><div class="bl"><span>Program group</span><b id="vp"></b></div><div class="bt"><div class="bf" id="fp" style="background:var(--teal)"></div></div></div>
+<div class="bar"><div class="bl"><span>Comparison group</span><b id="vc"></b></div><div class="bt"><div class="bf" id="fc" style="background:var(--soft)"></div></div></div>
+<div class="gap"><span class="sub">Apparent program effect</span><b id="gv"></b></div></div>
+<div class="card side"><h3>What's really driving this?</h3><p id="sc"></p><div class="hf" id="hf"></div></div>
+</div>
+
+<div class="card voice"><button id="hear">▶ Hear the instructor's take</button>
+<details><summary>Transcript</summary><p id="tr"></p></details></div>
+
+<label for="ref">Which number would you trust in your Week 4 write-up, and why? (For your own notes. Nothing is saved or sent.)</label>
+<textarea id="ref"></textarea>
+</div>
+<script>
+/* ---- INSTRUCTOR AUDIO: put an mp3 path (same Course Files folder) per mode. Empty = computer-voice demo. ---- */
+const AUDIO={self:"",random:""};
+const M={
+ self:{rs:"Patients decided for themselves whether to join. The comparison group is the patients who did not.",p:["−1.8 pts",72],c:["−0.4 pts",16],g:"−1.4 pts",r:"high",rt:"Confounding risk: High",
+  sc:"People who sign themselves up for a health program tend to already be more engaged with their health than people who don't, before the program ever starts.",
+  hf:"Hidden factor: <strong>baseline health motivation</strong>. Some of that −1.4 gap belongs to who joined, not to what the program did.",
+  tr:"Look at the gap first. It looks big. Now ask who chose to join. People who volunteer are often more motivated, so part of this result may come from them, not from the program."},
+ random:{rs:"A lottery decided who got the program. The comparison group is everyone the lottery left out.",p:["−1.1 pts",44],c:["−0.5 pts",20],g:"−0.6 pts",r:"low",rt:"Confounding risk: Low",
+  sc:"Random assignment means the two groups started out similar on average: motivation, income and access are roughly balanced between them.",
+  hf:"Groups can still differ by chance, especially in small samples, but nothing systematic pushes one group to improve more without the program.",
+  tr:"The estimated effect is smaller, and that is the point. The lottery removed the head start that motivated volunteers had. This is why randomized comparisons carry more weight, and why you should be ready to defend your own design choice."}};
+const $=id=>document.getElementById(id);
+function set(k){const s=M[k];
+ $('bSelf').setAttribute('aria-pressed',k==='self');$('bRand').setAttribute('aria-pressed',k==='random');
+ $('rs').textContent=s.rs;$('vp').textContent=s.p[0];$('fp').style.width=s.p[1]+'%';
+ $('vc').textContent=s.c[0];$('fc').style.width=s.c[1]+'%';$('gv').textContent=s.g;
+ $('sc').textContent=s.sc;$('hf').innerHTML=s.hf;$('tr').textContent=s.tr;
+ $('badge').className='badge '+s.r;$('badge').textContent=s.rt;cur=k;}
+let cur='self';
+$('bSelf').onclick=()=>set('self');$('bRand').onclick=()=>set('random');
+$('hear').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}
+ if(AUDIO[cur]){new Audio(AUDIO[cur]).play();return}
+ if('speechSynthesis' in window)speechSynthesis.speak(new SpeechSynthesisUtterance(M[cur].tr));};
+set('self');
+</script></body></html>
