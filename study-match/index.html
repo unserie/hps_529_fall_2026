@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Study Design Match</title>
+<style>
+:root{--paper:#F5F3ED;--ink:#1E2A24;--soft:#4B5850;--line:#D8D4C8;--teal:#2F6E62;--tt:#DCE8E4;--sage:#3F7355;--st:#D2E4D6;--rust:#9A4D22;--rt:#F1DDCC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:24px}
+.wrap{max-width:980px;margin:auto}
+h1{font:400 26px Georgia,serif;margin:0 0 4px}
+.sub{color:var(--soft);margin:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--soft);border-radius:5px;padding:7px 13px}
+button.p{background:var(--teal);border-color:var(--teal);color:#fff}
+button:focus-visible,.sc:focus-visible,.b:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.voice{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:10px 14px;margin-bottom:16px}
+.voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:6px}
+.voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+.stat{margin:0 0 12px;font-weight:600}
+.tray{display:flex;gap:12px;flex-wrap:wrap;min-height:70px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px dashed var(--line)}
+.sc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:230px;font-size:13px;cursor:grab}
+.sc[aria-pressed=true]{border:2px solid var(--teal);background:var(--tt)}
+.bk{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.b{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:200px;display:flex;flex-direction:column}
+.b.over{border:2px dashed var(--teal);background:var(--tt)}
+.bh{padding:10px;border-bottom:1px solid var(--line)}
+.bh b{font:600 13px Georgia,serif;display:block}
+.bh span{font-size:11.5px;color:var(--soft)}
+.dz{padding:8px;display:flex;flex-direction:column;gap:8px}
+.pc{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:8px;font-size:12px}
+.v{font-weight:700;font-size:11.5px;margin-bottom:3px}
+.ok{color:var(--sage)}.no{color:var(--rust)}
+.fb{margin-top:14px;padding:12px 14px;border-radius:6px;background:var(--card);border:1px solid var(--line);min-height:20px}
+.fb.no{background:var(--rt);border-color:#E2C3A8}
+.fb.ok{background:var(--st);border-color:#B9D3C0}
+.hint{font-size:12.5px;color:var(--soft);margin-top:10px}
+@media(max-width:800px){.bk{grid-template-columns:1fr}.sc{width:100%}}
+</style></head><body><div class="wrap">
+<div class="top"><div><h1>Study Design Match</h1>
+<p class="sub">Sort each research scenario into the design it describes. Drag it, or select it and then choose a design.</p></div>
+<div><button id="new" class="p">New round</button></div></div>
+
+<div class="voice"><button id="hearIntro">▶ Hear the instructor's intro</button>
+<details><summary>Transcript</summary><p id="tIntro"></p></details></div>
+
+<p class="stat" id="stat" aria-live="polite"></p>
+<div class="tray" id="tray" aria-label="Scenarios to sort"></div>
+<div class="bk" id="bk"></div>
+<div class="fb" id="fb" aria-live="polite">Feedback appears here.</div>
+<p class="hint">Missed one? You get a nudge first. A second miss shows the answer, so you can learn from it.</p>
+<div class="voice" id="doneBox" hidden style="margin-top:16px"><button id="hearDone">▶ Hear the instructor's wrap-up</button>
+<details><summary>Transcript</summary><p id="tDone"></p></details></div>
+</div>
+<script>
+/* ---- INSTRUCTOR AUDIO: put an mp3 path (same Course Files folder) in each slot. Empty = computer-voice demo. ---- */
+const AUDIO={intro:"",done:""};
+const SCRIPT={
+ intro:"Welcome. Before you choose a design for your own project, let's warm up. Each scenario describes a study. Ask yourself two things: is there a comparison group, and which direction does the study look, backward from an outcome or forward from an exposure? Take your time. Mistakes here are free.",
+ done:"Nice work. Notice which designs you hesitated on. Those are the ones to review before Week 4. Next, try the Study Design Sandbox to see why randomization earns its reputation."
+};
+function speak(k){try{speechSynthesis.cancel();}catch(e){}
+ if(AUDIO[k]){new Audio(AUDIO[k]).play();return;}
+ if('speechSynthesis' in window){speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]));}}
+document.getElementById('tIntro').textContent=SCRIPT.intro;
+document.getElementById('tDone').textContent=SCRIPT.done;
+hearIntro.onclick=()=>speak('intro');hearDone.onclick=()=>speak('done');
+
+const D=[["Case series","Detailed account of a small group of patients, no comparison group."],
+["Cross-sectional","A snapshot of a population at one point in time."],
+["Case-control","Starts with the outcome, looks backward for exposure."],
+["Cohort","Groups defined by exposure, followed forward over time."],
+["RCT","Random assignment to intervention or comparison."]];
+const BANK=[
+[0,"A clinic writes up detailed notes on what happened to the first 8 patients who used the mobile screening van.","Is there any comparison group here?","No comparison group, just a close description of a few patients."],
+[0,"Staff document the full clinical course of 12 residents who were referred to care after an abnormal A1C at the van.","Count the groups being compared.","One small group described in detail, with no comparison."],
+[1,"A one-day county survey asks residents whether they've been screened and what their current A1C control looks like.","How many time points are there?","Everyone is measured once, at a single point in time."],
+[1,"Health workers interview 400 adults at a county fair about screening history and current diabetes status.","Does anyone get followed up later?","One snapshot of a population, with exposure and outcome measured together."],
+[2,"Researchers identify patients with diabetes complications, match them to similar patients without complications, then check screening history.","Where does the study start: with the exposure or the outcome?","It starts from the outcome (complications) and looks backward for exposure (screening)."],
+[2,"Starting from 150 residents diagnosed late, a team pulls records of 150 matched residents diagnosed early and compares past clinic visits.","Which direction does this study look?","It starts from the outcome (late diagnosis) and looks back at exposure."],
+[3,"County health department tracks screened vs. unscreened residents forward for two years, comparing complication rates.","Are groups defined by exposure and followed forward?","Groups defined by exposure, followed forward over time."],
+[3,"Clinic staff enroll newly-screened patients and check back on their A1C every six months for two years.","Does this follow the same people across time?","The same people are followed forward, which makes it a cohort."],
+[4,"Clinics are randomly assigned to offer mobile screening or continue standard care; A1C compared at 6 months.","Who decides which group each clinic joins?","Random assignment to intervention or comparison defines an RCT."],
+[4,"Residents are randomly assigned by lottery to receive coaching plus screening or usual care; weight and A1C are compared at 12 months.","Who decides which group each person joins?","Random assignment to intervention or comparison defines an RCT."]
+].map((x,i)=>({id:i,d:x[0],t:x[1],h:x[2],e:x[3]}));
+
+let round=[],placed={},miss={},sel=null,first=0;
+const $=id=>document.getElementById(id);
+function start(){
+ const pick=[];[0,1,2,3,4].forEach(d=>{const p=BANK.filter(c=>c.d===d).sort(()=>Math.random()-.5)[0];pick.push(p)});
+ round=pick.sort(()=>Math.random()-.5);placed={};miss={};sel=null;first=0;
+ $('fb').className='fb';$('fb').textContent='Feedback appears here.';$('doneBox').hidden=true;render();}
+function render(){
+ const tray=$('tray');tray.innerHTML='';
+ round.filter(c=>!(c.id in placed)).forEach(c=>{
+  const el=document.createElement('div');el.className='sc';el.tabIndex=0;el.draggable=true;el.setAttribute('role','button');
+  el.setAttribute('aria-pressed',sel===c.id);el.textContent=c.t;
+  el.ondragstart=e=>{e.dataTransfer.setData('text/plain',c.id);sel=c.id};
+  const pick=()=>{sel=(sel===c.id?null:c.id);render()};
+  el.onclick=pick;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}};
+  tray.appendChild(el);});
+ if(!tray.children.length)tray.textContent='All sorted!';
+ const bk=$('bk');bk.innerHTML='';
+ D.forEach((d,i)=>{
+  const b=document.createElement('div');b.className='b';b.tabIndex=0;b.setAttribute('role','button');
+  b.setAttribute('aria-label','Place selected scenario in '+d[0]);
+  b.innerHTML='<div class="bh"><b>'+d[0]+'</b><span>'+d[1]+'</span></div><div class="dz"></div>';
+  const dz=b.querySelector('.dz');
+  round.filter(c=>placed[c.id]===i).forEach(c=>{
+   const ok=miss[c.id]<2||c.d===i&&miss[c.id]===undefined;
+   const p=document.createElement('div');p.className='pc';
+   p.innerHTML='<div class="v '+(miss[c.id]>=2?'no':'ok')+'">'+(miss[c.id]>=2?'! Revealed':'✓ Correct')+'</div>'+c.t;dz.appendChild(p);});
+  b.ondragover=e=>{e.preventDefault();b.classList.add('over')};
+  b.ondragleave=()=>b.classList.remove('over');
+  b.ondrop=e=>{e.preventDefault();b.classList.remove('over');try_(+e.dataTransfer.getData('text/plain'),i)};
+  const go=()=>{if(sel===null){setFb('Select a scenario first, then choose a design.','no')}else try_(sel,i)};
+  b.onclick=go;b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+  bk.appendChild(b);});
+ $('stat').textContent=Object.keys(placed).length+' of '+round.length+' sorted · '+first+' correct on the first try';
+ if(Object.keys(placed).length===round.length)$('doneBox').hidden=false;}
+function setFb(m,c){$('fb').className='fb '+c;$('fb').textContent=m}
+function try_(id,i){
+ const c=BANK[id];if(id in placed||!round.includes(c))return;
+ if(c.d===i){placed[id]=i;if(!miss[id])first++;
+  setFb('✓ Correct. '+c.e,'ok');sel=null;}
+ else{miss[id]=(miss[id]||0)+1;
+  if(miss[id]===1){setFb('Not quite. Nudge: '+c.h,'no');sel=null;}
+  else{placed[id]=c.d;setFb('Not this time. This one is a '+D[c.d][0]+' study: '+c.e,'no');sel=null;}}
+ render();}
+$('new').onclick=start;start();
+</script></body></html>
