@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logic Model Builder</title>
+<style>
+:root{--paper:#F5F3ED;--ink:#1E2A24;--soft:#4B5850;--line:#D8D4C8;--teal:#2F6E62;--tt:#DCE8E4;--sage:#3F7355;--st:#D2E4D6;--gold:#C99A3B;--gt:#F0E1C0;--rust:#9A4D22;--rt:#F1DDCC;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:24px}
+.wrap{max-width:1180px;margin:auto}
+h1{font:400 26px Georgia,serif;margin:0 0 4px}
+h3{font:600 14px Georgia,serif;margin:0 0 6px}
+.sub{color:var(--soft);margin:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--soft);border-radius:5px;padding:6px 12px}
+button.p{background:var(--teal);border-color:var(--teal);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.voice{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:10px 14px;margin-bottom:14px}
+.voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:6px}
+.voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+.card,.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+textarea,input{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:7px;background:#fff;color:var(--ink)}
+textarea{min-height:60px;resize:vertical}
+label{font-weight:600;display:block;margin-bottom:4px}
+.sit{margin-bottom:14px}
+.scroll{overflow-x:auto;padding-bottom:8px}
+.flow{display:grid;grid-template-columns:repeat(7,minmax(165px,1fr));gap:10px;min-width:1230px}
+.col{border-top:3px solid var(--band);background:rgba(255,255,255,.55);border-radius:6px;padding:8px}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.ch b{font:600 14px Georgia,serif}
+.ch button{padding:1px 7px;font-size:12px}
+.q{font-size:11.5px;color:var(--soft);margin:2px 0 8px}
+.cd{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px 9px;margin-bottom:8px;font-size:12.5px;cursor:grab}
+.cd .ac{display:flex;gap:3px;margin-top:6px}
+.cd .ac button{padding:0 6px;font-size:12px;line-height:20px}
+.nt{margin-top:6px;padding:5px 7px;background:var(--gt);border-radius:5px;font-size:11.5px;color:#5c4718}
+.col.over{background:var(--tt)}
+.lock{font-size:11.5px;color:var(--soft);border:1px dashed var(--line);border-radius:6px;padding:7px;text-align:center}
+.add{display:flex;flex-direction:column;gap:5px}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.pn .a{border-top:3px solid var(--sage)}.pn .e{border-top:3px solid var(--gold)}
+.pn ul{margin:6px 0;padding-left:18px}
+.pn li button{border:0;background:none;color:var(--rust);padding:0 4px}
+.ft{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+#out{display:none;margin-top:10px;min-height:170px}
+@media(max-width:760px){.pn{grid-template-columns:1fr}}
+@media print{.noprint,button,.add,.lock,.voice{display:none!important}body{padding:0}.scroll{overflow:visible}.flow{min-width:0;grid-template-columns:repeat(7,1fr);font-size:10px}}
+</style></head><body><div class="wrap">
+<div class="top"><div><h1>Logic Model Builder</h1>
+<p class="sub">Build your program's logic model one column at a time, from what you invest to the change you want.</p></div>
+<div class="noprint"><button id="ex">Load an example</button> <button id="clr">Start over</button></div></div>
+
+<div class="voice noprint"><button id="hearIntro">▶ Hear the instructor's intro</button>
+<details><summary>Transcript</summary><p id="tIntro"></p></details></div>
+
+<div class="card sit"><label for="sit">Situation: what problem will your program address, who is affected, and who else cares?</label>
+<textarea id="sit" placeholder="e.g., Rural adults in [County] are diagnosed with type 2 diabetes late, and complications are higher than in urban areas."></textarea></div>
+
+<div class="scroll"><div class="flow" id="flow"></div></div>
+
+<div class="pn">
+<div class="panel a"><h3>Assumptions</h3><p class="sub">Beliefs you are counting on to be true.</p><ul id="ass"></ul>
+<div class="add noprint"><input id="assIn" aria-label="Add assumption" placeholder="e.g., Partner clinic can accept referrals"><button id="assBtn">Add assumption</button></div></div>
+<div class="panel e"><h3>External / contextual factors</h3><p class="sub">Things outside your control that can help or hurt: policies, community, institutions, environment.</p><ul id="ext"></ul>
+<div class="add noprint"><input id="extIn" aria-label="Add contextual factor" placeholder="e.g., Seasonal weather limits road access"><button id="extBtn">Add factor</button></div></div>
+</div>
+
+<div class="ft noprint"><button class="p" id="print">Print / save as PDF</button><button id="copy">Copy as text outline</button>
+<span class="sub">Nothing is saved or sent. Export before you leave this page, then add your written description of each component.</span></div>
+<textarea id="out" readonly aria-label="Text outline"></textarea>
+<div class="voice noprint" style="margin-top:14px"><button id="hearDone">▶ Hear the instructor's wrap-up</button>
+<details><summary>Transcript</summary><p id="tDone"></p></details></div>
+</div>
+<script>
+/* ---- INSTRUCTOR AUDIO: put an mp3 path (same Course Files folder) in each slot. Empty = computer-voice demo. ---- */
+const AUDIO={intro:"",done:"",in:"",ac:"",ou:"",st:"",im:"",lt:"",imp:""};
+const SCRIPT={
+ intro:"Start with your situation, then build left to right. Each column answers a different question, and each item goes in just one column. If two items feel like they belong together, that is fine: the model is a simple picture, not a schedule. Add assumptions and outside factors as you go, not at the end.",
+ done:"Read your model out loud from left to right. Does each step really lead to the next? If you can't explain a link, that link is an assumption. Write it down, and address it in your written description.",
+ in:"Inputs are what you invest: people, money, partners, equipment, and knowledge.",
+ ac:"Activities are what you do: the workshops, screenings, or events you deliver.",
+ ou:"Outputs are the direct products of your activities and who you reach. Count things here. Do not describe change yet.",
+ st:"Short-term outcomes are changes in awareness, knowledge, skills, attitude, or motivation.",
+ im:"Intermediate outcomes are changes in behavior, practice, or policy that follow the learning.",
+ lt:"Long-term outcomes are changes in conditions, such as health, social, or economic conditions.",
+ imp:"Impact is the broad, lasting change your program contributes to. Be honest about what you can and cannot influence."};
+function speak(k){try{speechSynthesis.cancel()}catch(e){}
+ if(AUDIO[k]){new Audio(AUDIO[k]).play();return}
+ if('speechSynthesis' in window)speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]))}
+const $=id=>document.getElementById(id);
+$('tIntro').textContent=SCRIPT.intro;$('tDone').textContent=SCRIPT.done;
+$('hearIntro').onclick=()=>speak('intro');$('hearDone').onclick=()=>speak('done');
+
+/* ---- Columns follow the McCawley model plus the syllabus terms. Edit here once the instructor confirms his template. ---- */
+const COLS=[
+{k:'in',n:'Inputs',q:'What we invest: time, money, partners, equipment, facilities, knowledge base',b:'#2F6E62'},
+{k:'ac',n:'Activities',q:'What we do: workshops, screenings, events, publications',b:'#3E7D70'},
+{k:'ou',n:'Outputs',q:'What we produce and who we reach: numbers of sessions and participants',b:'#5C8A6E',
+ chk:[/\b(increase|improv|reduc|decreas|better|higher|lower|gain)/i,'This sounds like a change, which belongs in Outcomes. Outputs count what you do and who you reach.']},
+{k:'st',n:'Short-term outcomes',q:'Change in awareness, knowledge, skills, attitude, motivation',b:'#7A9A62',
+ chk:[/\b(behavior|behaviour|practice|polic|rate|incidence|mortality|complication|prevalence)/i,'This sounds like a later change. Short-term is what people learn or feel, not what they do or how their health changes.']},
+{k:'im',n:'Intermediate outcomes',q:'Change in behavior, practice, policy, procedure',b:'#A9A24E',
+ chk:[/\b(knowledge|awareness|aware|attitude|skill|motivation)/i,'This sounds like a short-term outcome. Intermediate is what people do differently because of what they learned.']},
+{k:'lt',n:'Long-term outcomes',q:'Change in conditions: health, social, economic, environmental',b:'#C99A3B',
+ chk:[/\b(workshop|training|screening event|outreach|session)/i,'This sounds like an activity or output. Long-term outcomes describe changed conditions.']},
+{k:'imp',n:'Impact',q:'Broad, lasting change your program contributes to',b:'#B5602F',
+ chk:[/\b(workshop|training|screening event|outreach|session)/i,'This sounds like an activity or output. Impact is the broad change you contribute to.']}];
+let S,uid=1;
+function fresh(){S={sit:'',c:{},ass:[],ext:[]};COLS.forEach(c=>S.c[c.k]=[]);$('sit').value='';$('out').style.display='none'}
+function unlocked(i){return i===0||S.c[COLS[i-1].k].length>0}
+function nudge(c,t){return c.chk&&c.chk[0].test(t)?c.chk[1]:''}
+function addCard(k,t){t=t.trim();if(!t)return;const c=COLS.find(x=>x.k===k);S.c[k].push({id:uid++,t,n:nudge(c,t)});render()}
+function move(id,from,to){if(to<0||to>=COLS.length)return;const f=COLS[from].k,g=COLS[to].k;
+ const i=S.c[f].findIndex(x=>x.id===id);if(i<0)return;const [cd]=S.c[f].splice(i,1);cd.n=nudge(COLS[to],cd.t);S.c[g].push(cd);render()}
+function render(){
+ const fl=$('flow');fl.innerHTML='';
+ COLS.forEach((c,i)=>{
+  const el=document.createElement('div');el.className='col';el.style.setProperty('--band',c.b);
+  el.innerHTML='<div class="ch"><b>'+c.n+'</b><button class="noprint" aria-label="Hear tip for '+c.n+'">▶</button></div><div class="q">'+c.q+'</div>';
+  el.querySelector('button').onclick=()=>speak(c.k);
+  S.c[c.k].forEach(cd=>{
+   const d=document.createElement('div');d.className='cd';d.draggable=true;
+   d.ondragstart=e=>e.dataTransfer.setData('text/plain',JSON.stringify({id:cd.id,from:i}));
+   const tx=document.createElement('div');tx.textContent=cd.t;d.appendChild(tx);
+   if(cd.n){const n=document.createElement('div');n.className='nt';n.textContent=cd.n;d.appendChild(n)}
+   const ac=document.createElement('div');ac.className='ac noprint';
+   [['◀','Move left',()=>move(cd.id,i,i-1),i===0],['▶','Move right',()=>move(cd.id,i,i+1),i===COLS.length-1],
+    ['✕','Remove',()=>{S.c[c.k]=S.c[c.k].filter(x=>x.id!==cd.id);render()},false]].forEach(a=>{
+     const b=document.createElement('button');b.textContent=a[0];b.setAttribute('aria-label',a[1]+': '+cd.t);b.disabled=a[3];b.onclick=a[2];ac.appendChild(b)});
+   d.appendChild(ac);el.appendChild(d)});
+  if(unlocked(i)){
+   const f=document.createElement('div');f.className='add noprint';
+   f.innerHTML='<input aria-label="Add to '+c.n+'" placeholder="Add an item"><button>Add</button>';
+   const inp=f.querySelector('input'),go=()=>{addCard(c.k,inp.value)};
+   f.querySelector('button').onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};el.appendChild(f)}
+  else{const l=document.createElement('div');l.className='lock';l.textContent='Add at least one item to '+COLS[i-1].n+' first.';el.appendChild(l)}
+  el.ondragover=e=>{if(unlocked(i)){e.preventDefault();el.classList.add('over')}};
+  el.ondragleave=()=>el.classList.remove('over');
+  el.ondrop=e=>{e.preventDefault();el.classList.remove('over');try{const o=JSON.parse(e.dataTransfer.getData('text/plain'));if(o.from!==i)move(o.id,o.from,i)}catch(x){}};
+  fl.appendChild(el)});
+ ['ass','ext'].forEach(k=>{const u=$(k);u.innerHTML='';S[k].forEach((t,j)=>{const li=document.createElement('li');li.textContent=t+' ';
+  const b=document.createElement('button');b.textContent='✕';b.setAttribute('aria-label','Remove: '+t);b.onclick=()=>{S[k].splice(j,1);render()};li.appendChild(b);u.appendChild(li)})});
+}
+function addLine(k,inp){const v=$(inp).value.trim();if(v){S[k].push(v);$(inp).value='';render()}}
+$('assBtn').onclick=()=>addLine('ass','assIn');$('extBtn').onclick=()=>addLine('ext','extIn');
+$('assIn').onkeydown=e=>{if(e.key==='Enter')addLine('ass','assIn')};$('extIn').onkeydown=e=>{if(e.key==='Enter')addLine('ext','extIn')};
+$('clr').onclick=()=>{if(confirm('Clear everything and start over?')){fresh();render()}};
+$('ex').onclick=()=>{fresh();$('sit').value='Rural adults in Example County are diagnosed with type 2 diabetes late, and complications are higher than in urban areas.';
+ const E={in:['Grant funding (2 years)','Trained community health workers','Mobile screening van','Partner clinic'],ac:['Door-to-door outreach','Free A1C screening events','Referral coordination with the clinic'],
+ ou:['500 residents screened','80 residents referred to care'],st:['Residents know their diabetes risk factors'],im:['Residents with high A1C follow up with a clinic'],lt:['Fewer late diagnoses in the county'],imp:['Narrower rural-urban gap in diabetes complications']};
+ COLS.forEach(c=>(E[c.k]||[]).forEach(t=>S.c[c.k].push({id:uid++,t,n:''})));
+ S.ass=['Community trusts the outreach workers','Van can reach rural roads year-round'];S.ext=['Seasonal weather limits road access','State Medicaid eligibility rules'];render()};
+$('print').onclick=()=>{S.sit=$('sit').value;window.print()};
+$('copy').onclick=()=>{let t='SITUATION\n'+($('sit').value||'(not written yet)')+'\n';
+ COLS.forEach(c=>{t+='\n'+c.n.toUpperCase()+'\n'+(S.c[c.k].map(x=>'- '+x.t).join('\n')||'-')+'\n'});
+ t+='\nASSUMPTIONS\n'+(S.ass.map(x=>'- '+x).join('\n')||'-')+'\n\nEXTERNAL / CONTEXTUAL FACTORS\n'+(S.ext.map(x=>'- '+x).join('\n')||'-')+'\n';
+ const o=$('out');o.value=t;o.style.display='block';o.select();try{navigator.clipboard.writeText(t)}catch(e){}};
+window.onbeforeunload=e=>{if(Object.values(S.c).some(a=>a.length)){e.preventDefault();e.returnValue=''}};
+fresh();render();
+</script></body></html>
