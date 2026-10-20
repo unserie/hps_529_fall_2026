@@ -15,16 +15,18 @@ button:focus-visible,.sc:focus-visible,.b:focus-visible{outline:3px solid var(--
 .voice{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:10px 14px;margin-bottom:16px}
 .voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:6px}
 .voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
+.key{font-size:12.5px;color:var(--soft);margin:0 0 12px}
 .stat{margin:0 0 12px;font-weight:600}
 .tray{display:flex;gap:12px;flex-wrap:wrap;min-height:70px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px dashed var(--line)}
-.sc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:230px;font-size:13px;cursor:grab}
+.sc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:290px;font-size:13px;cursor:grab}
 .sc[aria-pressed=true]{border:2px solid var(--teal);background:var(--tt)}
-.bk{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.b{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:200px;display:flex;flex-direction:column}
+.bk{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.b{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:170px;display:flex;flex-direction:column}
 .b.over{border:2px dashed var(--teal);background:var(--tt)}
 .bh{padding:10px;border-bottom:1px solid var(--line)}
-.bh b{font:600 13px Georgia,serif;display:block}
-.bh span{font-size:11.5px;color:var(--soft)}
+.bh b{font:600 13.5px Georgia,serif;display:block}
+.bh span{font-size:12px;color:var(--soft);display:block}
+.bh code{display:block;margin-top:5px;font:11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--teal);white-space:pre-line}
 .dz{padding:8px;display:flex;flex-direction:column;gap:8px}
 .pc{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:8px;font-size:12px}
 .v{font-weight:700;font-size:11.5px;margin-bottom:3px}
@@ -34,59 +36,96 @@ button:focus-visible,.sc:focus-visible,.b:focus-visible{outline:3px solid var(--
 .fb.ok{background:var(--st);border-color:#B9D3C0}
 .hint{font-size:12.5px;color:var(--soft);margin-top:10px}
 @media(max-width:800px){.bk{grid-template-columns:1fr}.sc{width:100%}}
+.sumbox{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold,#C99A3B);border-radius:6px;padding:12px 14px;margin-top:16px}
+.sumbox h3{font:600 14px Georgia,serif;margin:0 0 4px}
+.sumbox textarea{width:100%;min-height:110px;margin:10px 0 8px;border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit;background:#FBFAF6}
+.sumbox .msg{margin-left:10px;color:var(--sage);font-size:12.5px}
 </style></head><body><div class="wrap">
 <div class="top"><div><h1>Study Design Match</h1>
-<p class="sub">Sort each research scenario into the design it describes. Drag it, or select it and then choose a design.</p></div>
+<p class="sub">Sort each evaluation scenario into the design it describes. Drag it, or select it and then choose a design.</p></div>
 <div><button id="new" class="p">New round</button></div></div>
 
-<div class="voice"><button id="hearIntro">▶ Hear the instructor's intro</button>
+<div class="voice"><button class="aud" data-k="intro" data-label="▶ Hear the instructor's intro">▶ Hear the instructor's intro</button>
 <details><summary>Transcript</summary><p id="tIntro"></p></details></div>
 
+<p class="key"><b>Key:</b> O = observation or measurement · X = intervention · R = random assignment</p>
 <p class="stat" id="stat" aria-live="polite"></p>
 <div class="tray" id="tray" aria-label="Scenarios to sort"></div>
 <div class="bk" id="bk"></div>
 <div class="fb" id="fb" aria-live="polite">Feedback appears here.</div>
 <p class="hint">Missed one? You get a nudge first. A second miss shows the answer, so you can learn from it.</p>
-<div class="voice" id="doneBox" hidden style="margin-top:16px"><button id="hearDone">▶ Hear the instructor's wrap-up</button>
+<div class="voice" id="doneBox" hidden style="margin-top:16px"><button class="aud" data-k="done" data-label="▶ Hear the instructor's wrap-up">▶ Hear the instructor's wrap-up</button>
 <details><summary>Transcript</summary><p id="tDone"></p></details></div>
+<div class="sumbox"><h3>Summary for your discussion post</h3>
+<p class="sub">When you're done, create a short summary of what you did and how you did, then copy it into your post.</p>
+<button id="mk" class="p">Create my summary</button>
+<div id="sumOut" hidden><textarea id="sumTxt" aria-label="Your summary"></textarea>
+<button id="cp">Copy to clipboard</button><span class="msg" id="cpMsg" aria-live="polite"></span></div></div>
 </div>
 <script>
 /* ---- INSTRUCTOR AUDIO: put an mp3 path (same Course Files folder) in each slot. Empty = computer-voice demo. ---- */
 const AUDIO={intro:"",done:""};
 const SCRIPT={
- intro:"Welcome. Before you choose a design for your own project, let's warm up. Each scenario describes a study. Ask yourself two things: is there a comparison group, and which direction does the study look, backward from an outcome or forward from an exposure? Take your time. Mistakes here are free.",
- done:"Nice work. Notice which designs you hesitated on. Those are the ones to review before Week 4. Next, try the Study Design Sandbox to see why randomization earns its reputation."
+ intro:"Welcome. Before you choose an evaluation design for your own project, let's warm up. Each scenario describes an evaluation. Ask yourself four things. Was there a baseline measurement? Was there a comparison group? Was assignment random? And is anyone testing the effect of the pre-test itself, or of more than one intervention? Take your time. Mistakes here are free.",
+ done:"Nice work. Notice which designs you hesitated on. Those are the ones to review before you write up your own design in Week 4. Next, try the Study Design Sandbox to see how the same program can look very different depending on the design."
 };
-function speak(k){try{speechSynthesis.cancel();}catch(e){}
- if(AUDIO[k]){new Audio(AUDIO[k]).play();return;}
- if('speechSynthesis' in window){speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]));}}
+
+/* ---- Audio with pause / resume ---- */
+const A={cur:null,au:null,u:null,paused:false};
+function refreshBtns(){document.querySelectorAll('.aud').forEach(b=>{
+ b.textContent=(A.cur===b.dataset.k)?(A.paused?'▶ Resume':'⏸ Pause'):b.dataset.label;});}
+function stopMedia(){if(A.au){A.au.pause();}A.au=null;A.u=null;try{speechSynthesis.cancel()}catch(e){}A.cur=null;A.paused=false;refreshBtns();}
+function toggleAudio(k){
+ if(A.cur===k){
+  if(A.au){if(A.paused){A.au.play();A.paused=false}else{A.au.pause();A.paused=true}}
+  else{try{if(A.paused){speechSynthesis.resume();A.paused=false}else{speechSynthesis.pause();A.paused=true}}catch(e){}}
+  refreshBtns();return;}
+ stopMedia();A.cur=k;
+ if(AUDIO[k]){const a=new Audio(AUDIO[k]);A.au=a;a.onended=()=>{if(A.au===a)stopMedia()};a.play();}
+ else if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(SCRIPT[k]);A.u=u;
+  u.onend=u.onerror=()=>{if(A.u===u)stopMedia()};speechSynthesis.speak(u);}
+ else{A.cur=null}
+ refreshBtns();}
+document.querySelectorAll('.aud').forEach(b=>b.onclick=()=>toggleAudio(b.dataset.k));
 document.getElementById('tIntro').textContent=SCRIPT.intro;
 document.getElementById('tDone').textContent=SCRIPT.done;
-hearIntro.onclick=()=>speak('intro');hearDone.onclick=()=>speak('done');
 
-const D=[["Case series","Detailed account of a small group of patients, no comparison group."],
-["Cross-sectional","A snapshot of a population at one point in time."],
-["Case-control","Starts with the outcome, looks backward for exposure."],
-["Cohort","Groups defined by exposure, followed forward over time."],
-["RCT","Random assignment to intervention or comparison."]];
+/* ---- Designs (from Dr. Ehiri's Evaluation Designs lecture) ---- */
+const D=[
+["Post-test only","Intervention, then one assessment. No baseline.","X → O"],
+["Before-and-after","Same group assessed before and after. No comparison group.","O → X → O"],
+["Controlled before-and-after","Before-and-after plus a comparison group that was not randomized (non-equivalent groups).","Intervention: O → X → O\nComparison:  O →   → O"],
+["Factorial","Tests two or more interventions at once, alone and in combination.","A only · B only · A+B · neither"],
+["Solomon four-group","Tests whether the pre-test itself changes the results: two groups get a pre-test, two do not.","G1: O X O\nG2: O   O\nG3:   X O\nG4:     O"],
+["Randomized controlled trial","Random assignment to intervention or control. The gold standard for internal validity.","R → O → X → O\nR → O →   → O"]];
 const BANK=[
-[0,"A clinic writes up detailed notes on what happened to the first 8 patients who used the mobile screening van.","Is there any comparison group here?","No comparison group, just a close description of a few patients."],
-[0,"Staff document the full clinical course of 12 residents who were referred to care after an abnormal A1C at the van.","Count the groups being compared.","One small group described in detail, with no comparison."],
-[1,"A one-day county survey asks residents whether they've been screened and what their current A1C control looks like.","How many time points are there?","Everyone is measured once, at a single point in time."],
-[1,"Health workers interview 400 adults at a county fair about screening history and current diabetes status.","Does anyone get followed up later?","One snapshot of a population, with exposure and outcome measured together."],
-[2,"Researchers identify patients with diabetes complications, match them to similar patients without complications, then check screening history.","Where does the study start: with the exposure or the outcome?","It starts from the outcome (complications) and looks backward for exposure (screening)."],
-[2,"Starting from 150 residents diagnosed late, a team pulls records of 150 matched residents diagnosed early and compares past clinic visits.","Which direction does this study look?","It starts from the outcome (late diagnosis) and looks back at exposure."],
-[3,"County health department tracks screened vs. unscreened residents forward for two years, comparing complication rates.","Are groups defined by exposure and followed forward?","Groups defined by exposure, followed forward over time."],
-[3,"Clinic staff enroll newly-screened patients and check back on their A1C every six months for two years.","Does this follow the same people across time?","The same people are followed forward, which makes it a cohort."],
-[4,"Clinics are randomly assigned to offer mobile screening or continue standard care; A1C compared at 6 months.","Who decides which group each clinic joins?","Random assignment to intervention or comparison defines an RCT."],
-[4,"Residents are randomly assigned by lottery to receive coaching plus screening or usual care; weight and A1C are compared at 12 months.","Who decides which group each person joins?","Random assignment to intervention or comparison defines an RCT."]
+[0,"After a 6-week community nutrition class, staff survey the 60 attendees about their eating habits. No survey was done before the class.","Is there any baseline measurement?","One assessment after the intervention, with no baseline and no comparison."],
+[0,"A clinic runs a coaching program for patients with diabetes and measures everyone's A1C once, at the end of the program.","How many times is the outcome measured?","Intervention first, then a single post-intervention assessment."],
+[0,"Health workers deliver a handwashing session at a school and test students' knowledge right afterward. No test was given beforehand.","Could you tell how much knowledge changed?","No baseline, so change cannot be measured. This is a post-test only design."],
+[1,"A clinic measures A1C for 80 patients, delivers 6 months of coaching, then measures the same 80 patients again. No other group is studied.","Is there a comparison group?","Same group, before and after, with no comparison group."],
+[1,"A village completes a bednet-use survey, a promotion campaign follows, and the same survey is repeated 3 months later in the same village.","Is anyone outside the campaign being compared?","A baseline and a follow-up for one group, with no comparison group."],
+[1,"A school assesses students' vaccination knowledge, runs an education unit, and reassesses the same students at the end of term.","How many groups are there?","One group measured before and after the intervention."],
+[2,"Town A gets a mobile screening van and Town B does not, chosen by the health department. Both towns are surveyed at baseline and again after a year.","Who decided which town got the van?","Baseline and follow-up in both groups, but assignment was not random. That is a controlled before-and-after (non-equivalent groups) design."],
+[2,"An intervention clinic and a similar comparison clinic both measure patients' A1C at baseline and at 6 months. The clinics were not randomly chosen.","Is there a comparison group, and is it randomized?","Before-and-after in both groups, with a non-randomized comparison group."],
+[2,"A district runs a malaria education program in 4 villages. Four similar villages without it serve as comparison, and all 8 are surveyed before and after.","Are the comparison villages randomly assigned?","Comparison group plus baseline, but no randomization."],
+[3,"A trial tests coaching and text reminders at once. Patients are in one of four groups: coaching only, reminders only, both, or neither.","How many interventions are being tested together?","More than one intervention tested alone and in combination is a factorial design."],
+[3,"A program tests a cash incentive and a clinic-transport voucher. Some families get one, some get both, and some get neither.","Are the interventions also tested in combination?","Two interventions, all combinations. That is a factorial design."],
+[3,"Researchers want to know whether a school nutrition lesson, a cafeteria menu change, or both together reduce BMI, so they set up all four combinations.","Count the combinations of interventions.","Two interventions crossed into four conditions is a factorial design."],
+[4,"To see whether the baseline survey itself changes people's answers, researchers make four groups. Two take a pre-test and two do not, and one of each pair gets the program. All take a post-test.","What is being tested besides the program?","The aim is to measure the effect of the pre-test (priming). That is the Solomon four-group design."],
+[4,"A team worries that a baseline questionnaire alerts people to a health topic. They split both the program and comparison groups, giving a pre-test to half of each.","Why split each group in two?","Splitting each group by pre-test versus no pre-test is the Solomon four-group design."],
+[4,"An evaluation uses four groups: pre-test and program, pre-test and no program, no pre-test and program, no pre-test and no program. Everyone gets a post-test.","What do the four groups let you separate?","Two program groups and two comparison groups, with and without pre-test: Solomon four-group."],
+[5,"Clinics are randomly assigned to offer mobile screening or continue standard care. A1C is measured at baseline and again at 6 months.","Who decides which group each clinic joins?","Random assignment to intervention or comparison defines a randomized controlled trial."],
+[5,"Residents are randomly assigned by lottery to coaching plus screening or usual care. Weight and A1C are compared at 12 months.","Who decides which group each person joins?","Random assignment to intervention or comparison defines a randomized controlled trial."],
+[5,"Villages are randomly allocated, using sealed opaque envelopes, to receive a water-treatment program or no program. Diarrhea rates are compared after one year.","How were villages allocated to groups?","Concealed random allocation to intervention or control is a randomized controlled trial."]
 ].map((x,i)=>({id:i,d:x[0],t:x[1],h:x[2],e:x[3]}));
 
-let round=[],placed={},miss={},sel=null,first=0;
+let round=[],placed={},miss={},sel=null,first=0,counted=false;
+const stats=D.map(()=>({n:0,f:0,r:0}));
 const $=id=>document.getElementById(id);
 function start(){
- const pick=[];[0,1,2,3,4].forEach(d=>{const p=BANK.filter(c=>c.d===d).sort(()=>Math.random()-.5)[0];pick.push(p)});
- round=pick.sort(()=>Math.random()-.5);placed={};miss={};sel=null;first=0;
+ stopMedia();
+ const pick=[];D.forEach((_,d)=>{const p=BANK.filter(c=>c.d===d).sort(()=>Math.random()-.5)[0];pick.push(p)});
+ round=pick.sort(()=>Math.random()-.5);placed={};miss={};sel=null;first=0;counted=false;
  $('fb').className='fb';$('fb').textContent='Feedback appears here.';$('doneBox').hidden=true;render();}
 function render(){
  const tray=$('tray');tray.innerHTML='';
@@ -102,12 +141,13 @@ function render(){
  D.forEach((d,i)=>{
   const b=document.createElement('div');b.className='b';b.tabIndex=0;b.setAttribute('role','button');
   b.setAttribute('aria-label','Place selected scenario in '+d[0]);
-  b.innerHTML='<div class="bh"><b>'+d[0]+'</b><span>'+d[1]+'</span></div><div class="dz"></div>';
+  b.innerHTML='<div class="bh"><b></b><span></span><code></code></div><div class="dz"></div>';
+  b.querySelector('b').textContent=d[0];b.querySelector('span').textContent=d[1];b.querySelector('code').textContent=d[2];
   const dz=b.querySelector('.dz');
   round.filter(c=>placed[c.id]===i).forEach(c=>{
-   const ok=miss[c.id]<2||c.d===i&&miss[c.id]===undefined;
    const p=document.createElement('div');p.className='pc';
-   p.innerHTML='<div class="v '+(miss[c.id]>=2?'no':'ok')+'">'+(miss[c.id]>=2?'! Revealed':'✓ Correct')+'</div>'+c.t;dz.appendChild(p);});
+   const v=document.createElement('div');v.className='v '+(miss[c.id]>=2?'no':'ok');v.textContent=miss[c.id]>=2?'! Revealed':'✓ Correct';
+   p.appendChild(v);p.appendChild(document.createTextNode(c.t));dz.appendChild(p);});
   b.ondragover=e=>{e.preventDefault();b.classList.add('over')};
   b.ondragleave=()=>b.classList.remove('over');
   b.ondrop=e=>{e.preventDefault();b.classList.remove('over');try_(+e.dataTransfer.getData('text/plain'),i)};
@@ -118,12 +158,32 @@ function render(){
  if(Object.keys(placed).length===round.length)$('doneBox').hidden=false;}
 function setFb(m,c){$('fb').className='fb '+c;$('fb').textContent=m}
 function try_(id,i){
- const c=BANK[id];if(id in placed||!round.includes(c))return;
- if(c.d===i){placed[id]=i;if(!miss[id])first++;
+ const c=BANK[id];if(!c||id in placed||!round.includes(c))return;
+ if(c.d===i){placed[id]=i;stats[c.d].n++;if(!miss[id]){first++;stats[c.d].f++}
   setFb('✓ Correct. '+c.e,'ok');sel=null;}
  else{miss[id]=(miss[id]||0)+1;
   if(miss[id]===1){setFb('Not quite. Nudge: '+c.h,'no');sel=null;}
-  else{placed[id]=c.d;setFb('Not this time. This one is a '+D[c.d][0]+' study: '+c.e,'no');sel=null;}}
+  else{placed[id]=c.d;stats[c.d].n++;stats[c.d].r++;setFb('Not this time. This one is a '+D[c.d][0]+' design: '+c.e,'no');sel=null;}}
  render();}
+
+function copyText(ta,msg){const t=ta.value;
+ const ok=()=>{msg.textContent='Copied. Paste it into your discussion post.'};
+ const fb=()=>{ta.focus();ta.select();let r=false;try{r=document.execCommand('copy')}catch(e){}
+  msg.textContent=r?'Copied. Paste it into your discussion post.':'Select the text and press Ctrl/Cmd+C to copy it.'};
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,fb)}else fb();}
+function joinList(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1]}
+function makeSummary(){
+ const tot=stats.reduce((a,x)=>a+x.n,0);
+ if(!tot)return 'Sort at least one scenario first, then create your summary.';
+ const f=stats.reduce((a,x)=>a+x.f,0),pct=Math.round(100*f/tot);
+  const good=[],help=[],rev=[];
+ stats.forEach((x,i)=>{if(!x.n)return;(x.f===x.n?good:help).push(D[i][0]);if(x.r)rev.push(D[i][0])});
+ let t='Study Design Match: I sorted '+tot+' evaluation scenario'+(tot>1?'s':'')+' into designs and got '+f+' ('+pct+'%) right on the first try.';
+ if(good.length)t+=' I identified '+joinList(good)+' correctly on the first try.';
+ if(help.length)t+=' I needed a nudge or the answer for '+joinList(help)+(rev.length&&rev.length<help.length?' (answer revealed for '+joinList(rev)+')':'')+', so I will review those before Week 4.';
+ else t+=' I did not need any hints.';
+ return t;}
+$('mk').onclick=()=>{$('sumTxt').value=makeSummary();$('sumOut').hidden=false;$('cpMsg').textContent='';};
+$('cp').onclick=()=>copyText($('sumTxt'),$('cpMsg'));
 $('new').onclick=start;start();
 </script></body></html>
