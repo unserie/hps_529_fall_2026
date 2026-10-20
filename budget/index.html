@@ -42,6 +42,10 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .ok{color:var(--sage)}.no{color:var(--rust)}.you{color:var(--gold)}
 .rows button{padding:1px 8px;font-size:12px;margin-left:6px}
 #out{display:none;width:100%;min-height:140px;margin-top:8px}
+.sumbox{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:12px 16px;margin-top:14px}
+.sumbox h3{margin:0 0 4px}
+.sumbox textarea{min-height:110px;margin:10px 0 8px;background:#FBFAF6}
+.sumbox .msg{margin-left:10px;color:var(--sage);font-size:12.5px}
 @media(max-width:760px){.main,.grid{grid-template-columns:1fr}}
 @media print{button,.card.voice,.noprint{display:none!important}body{padding:0}}
 </style></head><body><div class="wrap">
@@ -49,22 +53,22 @@ td.n,th.n{text-align:right;white-space:nowrap}
 <p class="sub">Enter your line items, see the shape of your budget, and fix problems before you write the justification.</p></div>
 <div class="noprint"><button id="ex">Load an example</button> <button id="clr">Start over</button></div></div>
 
-<div class="card voice"><button id="hearIntro">▶ Hear the instructor's intro</button>
+<div class="card voice"><button class="aud" id="hearIntro" data-k="intro" data-label="▶ Hear the instructor's intro">▶ Hear the instructor's intro</button>
 <details><summary>Transcript</summary><p id="tIntro"></p></details></div>
 
 <div class="card grid">
 <div><label for="inp"><b>Your logic model inputs</b> (one per line)</label>
 <textarea id="inp" placeholder="Trained community health workers&#10;Mobile screening van"></textarea>
-<p class="note">Your budget should cover each input. Link line items to inputs in the last column.</p></div>
+<p class="note">Paste the inputs from your logic model here. Each line item below has a “Logic model input it supports” dropdown that lists them, so the checks can confirm every input has money behind it.</p></div>
 <div><label for="fund"><b>Total funding available ($, optional)</b></label><input id="fund" type="number" min="0" placeholder="e.g., 60000">
 <label for="rate" style="display:block;margin-top:8px"><b>Indirect cost rate (%)</b></label><input id="rate" type="number" min="0" value="10">
 <label for="base" style="display:block;margin-top:8px"><b>Indirect rate applies to</b></label>
 <select id="base"><option value="mtdc">Modified total direct costs (excludes equipment and incentives)</option><option value="all">All direct costs</option></select></div></div>
 
 <div class="card"><h3>Line items</h3><div class="tw"><table><thead><tr>
-<th>Category</th><th>Item</th><th class="n">Quantity</th><th class="n">Unit cost ($)</th><th class="n">Periods</th><th>Cost basis (how you got the number)</th><th>Supports input</th><th class="n">Amount</th><th></th></tr></thead>
+<th>Category</th><th>Item</th><th class="n">Quantity</th><th class="n">Unit cost ($)</th><th class="n">Months</th><th>Cost basis (how you got the number)</th><th title="Pick which logic model input this line pays for">Logic model input it supports</th><th class="n">Amount</th><th></th></tr></thead>
 <tbody id="tb"></tbody></table></div>
-<p style="margin:10px 0 0"><button class="p" id="add">+ Add line item</button> <span class="note">Amount = quantity × unit cost × periods (months, years, trips).</span></p></div>
+<p style="margin:10px 0 0"><button class="p" id="add">+ Add line item</button> <span class="note">Amount = quantity × unit cost × months. Enter 1 for one-time costs.</span></p></div>
 
 <div class="main card"><div><div class="donut" id="dn" role="img" aria-label="Budget breakdown by category"><div class="dc"><b id="tot">$0</b><span class="note">Total request</span></div></div><div class="lg" id="lg"></div></div>
 <div class="tw"><table style="min-width:0"><thead><tr><th>Category</th><th class="n">Share</th><th class="n">Amount</th></tr></thead><tbody id="ct"></tbody></table></div></div>
@@ -74,7 +78,12 @@ td.n,th.n{text-align:right;white-space:nowrap}
 
 <div class="noprint"><button class="p" id="print">Print / save as PDF</button> <button id="copy">Copy table (paste into Excel)</button>
 <span class="note">Nothing is saved or sent. Copy your table into the Excel file you submit.</span><textarea id="out" readonly aria-label="Tab-separated budget"></textarea></div>
-<div class="card voice" style="margin-top:14px"><button id="hearDone">▶ Hear the instructor's wrap-up</button>
+<div class="sumbox noprint"><h3>Summary for your discussion post</h3>
+<p class="sub">When you're done, create a short summary of what you did and how you did, then copy it into your post.</p>
+<button id="mk" class="p">Create my summary</button>
+<div id="sumOut" hidden><textarea id="sumTxt" aria-label="Your summary"></textarea>
+<button id="cp">Copy to clipboard</button><span class="msg" id="cpMsg" aria-live="polite"></span></div></div>
+<div class="card voice" style="margin-top:14px"><button class="aud" id="hearDone" data-k="done" data-label="▶ Hear the instructor's wrap-up">▶ Hear the instructor's wrap-up</button>
 <details><summary>Transcript</summary><p id="tDone"></p></details></div>
 </div>
 <script>
@@ -87,12 +96,25 @@ const SCRIPT={
  basis:"Every line needs a cost basis. For example, an hourly rate times hours per week times weeks. If you can't show how you got the number, a reviewer can't trust it.",
  indirect:"Indirect costs pay for overhead. Rates are set by your funder or your institution, and they apply to a defined base. Check which rate and which base your assignment expects.",
  done:"Now read your budget against your logic model. Does every input have money behind it? Does every dollar connect to an activity? Your justification should explain that story in half a page."};
-function speak(k){try{speechSynthesis.cancel()}catch(e){}
- if(AUDIO[k]){new Audio(AUDIO[k]).play();return}
- if('speechSynthesis' in window)speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]))}
+/* ---- Audio with pause / resume ---- */
+const A={cur:null,au:null,u:null,paused:false};
+function refreshBtns(){document.querySelectorAll('button.aud').forEach(b=>{
+ b.textContent=(A.cur!==null&&A.cur===b.dataset.k)?(A.paused?'▶ Resume':'⏸ Pause'):b.dataset.label})}
+function stopMedia(){if(A.au){A.au.pause()}A.au=null;A.u=null;try{speechSynthesis.cancel()}catch(e){}A.cur=null;A.paused=false;refreshBtns()}
+function toggleAudio(k){
+ if(A.cur===k){
+  if(A.au){if(A.paused){A.au.play();A.paused=false}else{A.au.pause();A.paused=true}}
+  else{try{if(A.paused){speechSynthesis.resume();A.paused=false}else{speechSynthesis.pause();A.paused=true}}catch(e){}}
+  refreshBtns();return}
+ stopMedia();A.cur=k;
+ if(AUDIO[k]){const a=new Audio(AUDIO[k]);A.au=a;a.onended=()=>{if(A.au===a)stopMedia()};a.play()}
+ else if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance(SCRIPT[k]);A.u=u;
+  u.onend=u.onerror=()=>{if(A.u===u)stopMedia()};speechSynthesis.speak(u)}
+ else{A.cur=null}
+ refreshBtns()}
 const $=id=>document.getElementById(id);
 $('tIntro').textContent=SCRIPT.intro;$('tDone').textContent=SCRIPT.done;
-$('hearIntro').onclick=()=>speak('intro');$('hearDone').onclick=()=>speak('done');
+$('hearIntro').onclick=()=>toggleAudio('intro');$('hearDone').onclick=()=>toggleAudio('done');
 
 const CATS=[['per','Personnel','#2F6E62'],['trv','Travel','#5C8A6E'],['ops','Operations','#A9A24E'],['sup','Supplies','#C99A3B'],['eqp','Equipment','#B5602F'],['svc','Related services & activities','#5E7690'],['inc','Participant incentives','#8A5A8C']];
 const IND=['ind','Indirect costs','#7A7A7A'];
@@ -106,14 +128,14 @@ function build(){
  const tb=$('tb');tb.innerHTML='';
  R.forEach(r=>{
   const tr=document.createElement('tr');
-  const sel=(k,opts,v)=>'<select data-k="'+k+'" aria-label="'+k+'">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  const sel=(k,opts,v)=>'<select data-k="'+k+'" aria-label="'+(k==='inp'?'Logic model input this line supports':'Category')+'">'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
   tr.innerHTML='<td>'+sel('cat',CATS.map(c=>[c[0],c[1]]),r.cat)+'</td>'
   +'<td><input data-k="item" aria-label="Item" value=""></td>'
   +'<td class="n"><input data-k="q" type="number" min="0" aria-label="Quantity" style="width:80px"></td>'
   +'<td class="n"><input data-k="c" type="number" min="0" step="any" aria-label="Unit cost" style="width:95px"></td>'
-  +'<td class="n"><input data-k="p" type="number" min="0" step="any" aria-label="Periods" style="width:70px"></td>'
+  +'<td class="n"><input data-k="p" type="number" min="0" step="any" aria-label="Months" style="width:70px"></td>'
   +'<td><input data-k="b" aria-label="Cost basis" placeholder="e.g., $17/hr × 20 hrs/wk × 52 wks"></td>'
-  +'<td>'+sel('inp',[['','(none)']].concat(inputs().map(x=>[x,x])),r.inp)+'</td>'
+  +'<td>'+sel('inp',[['','(not linked)']].concat(inputs().map(x=>[x,x])),r.inp)+'</td>'
   +'<td class="n amt" id="a'+r.id+'"></td><td><button aria-label="Remove line item">✕</button></td>';
   ['item','q','c','p','b'].forEach(k=>tr.querySelector('[data-k="'+k+'"]').value=r[k]);
   tr.querySelectorAll('[data-k]').forEach(el=>{el.oninput=el.onchange=()=>{r[el.dataset.k]=el.value;calc()}});
@@ -152,26 +174,45 @@ function calc(){
  }
  const M={ok:'✓',no:'!',you:'?'};
  $('ck').innerHTML='';C.forEach(c=>{const li=document.createElement('li');li.innerHTML='<span class="mk '+c.st+'">'+M[c.st]+'</span><span></span>';
-  li.lastChild.textContent=c.tx;if(c.k&&c.st!=='ok'||c.k==='indirect'){const b=document.createElement('button');b.textContent='▶ Hear tip';b.onclick=()=>speak(c.k);li.lastChild.appendChild(b)}
+  li.lastChild.textContent=c.tx;if(c.k&&c.st!=='ok'||c.k==='indirect'){const b=document.createElement('button');b.className='aud';b.dataset.k=c.k;b.dataset.label='▶ Hear tip';b.textContent='▶ Hear tip';b.onclick=()=>toggleAudio(c.k);li.lastChild.appendChild(b)}
   $('ck').appendChild(li)});
- window._t=total}
+ window._t=total;window._S={total,direct,indirect,rate,mtdc:$('base').value==='mtdc',rows,C};refreshBtns()}
 ['rate','base','fund'].forEach(i=>$(i).oninput=$(i).onchange=calc);
 $('inp').onchange=build;
 $('add').onclick=()=>{newRow();build()};
 $('clr').onclick=()=>{if(confirm('Clear everything?')){R=[];$('inp').value='';$('fund').value='';$('rate').value=10;newRow();build()}};
 $('ex').onclick=()=>{R=[];$('inp').value='Trained community health workers\nMobile screening van\nFree A1C screening events\nPartner clinic referrals';$('rate').value=18;$('fund').value=90000;
- [{cat:'per',item:'Community health worker (part-time)',q:2,c:12000,p:2,b:'$12,000/yr each × 2 CHWs × 2 yrs',inp:'Trained community health workers'},
- {cat:'per',item:'Fringe benefits',q:1,c:5760,p:1,b:'12% of CHW salaries',inp:'Trained community health workers'},
+ [{cat:'per',item:'Community health worker (part-time)',q:2,c:1000,p:24,b:'$1,000/month each × 2 CHWs × 24 months',inp:'Trained community health workers'},
+ {cat:'per',item:'Fringe benefits',q:1,c:240,p:24,b:'12% of $2,000/month CHW salaries × 24 months',inp:'Trained community health workers'},
  {cat:'trv',item:'Mileage for van outreach',q:4000,c:0.7,p:1,b:'4,000 miles × $0.70/mile',inp:'Mobile screening van'},
  {cat:'sup',item:'A1C test kits',q:500,c:8,p:1,b:'',inp:'Free A1C screening events'},
  {cat:'eqp',item:'Mobile screening van lease',q:1,c:900,p:24,b:'$900/month × 24 months',inp:'Mobile screening van'},
  {cat:'inc',item:'Gift cards for screened residents',q:500,c:10,p:1,b:'$10 × 500 residents',inp:'Free A1C screening events'},
  {cat:'svc',item:'Referral coordination agreement',q:1,c:3000,p:1,b:'flat rate per partner agreement',inp:''}].forEach(newRow);build()};
 $('print').onclick=()=>window.print();
-$('copy').onclick=()=>{let t='Category\tItem\tQuantity\tUnit cost\tPeriods\tAmount\tCost basis\n';
+$('copy').onclick=()=>{let t='Category\tItem\tQuantity\tUnit cost\tMonths\tAmount\tCost basis\n';
  R.forEach(r=>{t+=[$$(r.cat)[1],r.item,r.q,r.c,r.p,amt(r),r.b].join('\t')+'\n'});
  t+='Indirect costs\t\t\t\t\t'+Math.round((window._t||0)-R.reduce((s,r)=>s+amt(r),0))+'\t'+$('rate').value+'% ('+($('base').value==='mtdc'?'MTDC':'all direct')+')\nTotal\t\t\t\t\t'+Math.round(window._t||0)+'\n';
  const o=$('out');o.value=t;o.style.display='block';o.select();try{navigator.clipboard.writeText(t)}catch(e){}};
+function copyText(ta,msg){const t=ta.value;
+ const ok=()=>{msg.textContent='Copied. Paste it into your discussion post.'};
+ const fb=()=>{ta.focus();ta.select();let r=false;try{r=document.execCommand('copy')}catch(e){}
+  msg.textContent=r?'Copied. Paste it into your discussion post.':'Select the text and press Ctrl/Cmd+C to copy it.'};
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,fb)}else fb()}
+function joinList(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1]}
+function makeSummary(){
+ const S=window._S,n=R.filter(r=>r.item||amt(r)>0).length;
+ if(!S||!n||!(S.total>0))return 'Budget Visualizer: add at least one line item with a quantity and unit cost, then create your summary.';
+ const top=S.rows.filter(x=>x[2]>0).sort((a,b)=>b[2]-a[2]).slice(0,3).map(x=>x[0].toLowerCase()+' ('+Math.round(x[2]/S.total*100)+'%)');
+ let t='Budget Visualizer: I built a budget with '+n+' line item'+(n===1?'':'s')+' totaling '+money(S.total)+' ('+money(S.direct)+' in direct costs plus '+money(S.indirect)+' in indirect costs at '+S.rate+'% of '+(S.mtdc?'modified total direct costs':'all direct costs')+'). ';
+ t+='The largest shares were '+joinList(top)+'. ';
+ const f=+$('fund').value;
+ if(f>0){const d=S.total-f;t+=Math.abs(d)<=f*.02?'The total is about equal to my available funding of '+money(f)+'. ':d>0?'The total is '+money(d)+' over my available funding of '+money(f)+'. ':'The total is '+money(-d)+' under my available funding of '+money(f)+'. '}
+ const ok=S.C.filter(c=>c.st==='ok').length,no=S.C.filter(c=>c.st==='no').length,you=S.C.filter(c=>c.st==='you').length;
+ t+='The automated checks showed '+ok+' passed, '+no+' to fix and '+you+' to consider.';
+ return t}
+$('mk').onclick=()=>{$('sumTxt').value=makeSummary();$('sumOut').hidden=false;$('cpMsg').textContent=''};
+$('cp').onclick=()=>copyText($('sumTxt'),$('cpMsg'));
 window.onbeforeunload=e=>{if(R.some(r=>r.item||r.q)){e.preventDefault();e.returnValue=''}};
 newRow();build();
 </script></body></html>
