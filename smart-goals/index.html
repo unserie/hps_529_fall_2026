@@ -1,109 +1,261 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SMART Objective Coach</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&display=swap">
 <style>
-:root{--paper:#F5F3ED;--ink:#1E2A24;--soft:#4B5850;--line:#D8D4C8;--teal:#2F6E62;--tt:#DCE8E4;--sage:#3F7355;--st:#D9E9DC;--gold:#8A6414;--gt:#F0E1C0;--rust:#9A4D22;--rt:#F1DDCC;--card:#fff}
+/* Layout: header, intro audio card, demo gate card, then the tool (draft card, results, worked example, reflections card). A narrated demo drives the real UI with a moving cursor under a fixed bottom bar. Same structure as the Prioritization Matrix Coach. */
+:root{
+  color-scheme:light;
+  --bg:#f3f1ec; --surface:#ffffff; --ink:#222222; --muted:#5f5f5a; --line:#dcd8cd;
+  --navy:#2f6b5e; --accent:#2f6b5e; --accent-ink:#ffffff; --soft:#efede6; --gold:#c9a24b;
+  --good:#2f6b5e; --warn:#8a6a12; --bad:#9a4d22;
+  --f-display:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --f-body:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1a1c1a; --surface:#242724; --ink:#ecebe6; --muted:#aeada5; --line:#3a3d39;
+    --navy:#7fc2af; --accent:#7fc2af; --accent-ink:#0f1f1a; --soft:#2d312d; --gold:#d9b35c;
+    --good:#7fc2af; --warn:#e0b95a; --bad:#e8946a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1a1c1a; --surface:#242724; --ink:#ecebe6; --muted:#aeada5; --line:#3a3d39;
+  --navy:#7fc2af; --accent:#7fc2af; --accent-ink:#0f1f1a; --soft:#2d312d; --gold:#d9b35c;
+  --good:#7fc2af; --warn:#e0b95a; --bad:#e8946a; color-scheme:dark;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:24px}
-.wrap{max-width:780px;margin:auto}
-h1{font:400 26px Georgia,serif;margin:0 0 4px}
-h3{font:600 14px Georgia,serif;margin:0 0 6px}
-.sub{color:var(--soft);margin:0}
-.top{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
-button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--soft);border-radius:5px;padding:7px 13px}
-button.p{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
-button:disabled{opacity:.55;cursor:not-allowed}
-:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
-.voice{border-left:4px solid var(--teal)}
-.voice summary{cursor:pointer;color:var(--soft);font-size:12.5px;margin-top:6px}
-.voice p{margin:6px 0 0;font-size:13px;color:var(--soft)}
-label{font-weight:600;display:block;margin:10px 0 4px}
-textarea,select{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:8px;background:#fff;color:var(--ink)}
-textarea{min-height:70px;resize:vertical}
-select{width:auto}
-.chips{display:flex;gap:6px;margin:8px 0 10px}
-.chip{flex:1;text-align:center;padding:7px 0;border-radius:6px;font-size:11px;font-weight:700}
-.chip span{display:block;font-size:13px}
-.ok{background:var(--st);color:var(--sage)}.no{background:var(--rt);color:var(--rust)}.you{background:var(--gt);color:var(--gold)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.demo-on{padding-bottom:190px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:1.9rem}
+h2{font-size:1.25rem}
+h3{font-size:1rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.eyebrow{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header{display:flex;flex-direction:column;gap:6px}
+.lead{max-width:68ch;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:6px;font-weight:600}
+.btn:hover{border-color:var(--navy)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:2px 10px;font-size:.85rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+#tool{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.lbl{display:block;font-size:.9rem;font-weight:600;margin:12px 0 4px}
+.lbl:first-child{margin-top:0}
+textarea,select{font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+select{width:auto;max-width:100%;padding:8px 10px}
+.aud{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.aud-st{font-size:.85rem;color:var(--muted)}
+.intro{display:flex;flex-direction:column;gap:10px;border-left:4px solid var(--navy)}
+details{font-size:.92rem}
+details summary{cursor:pointer;color:var(--muted)}
+details p{margin-top:8px;max-width:68ch}
+details h4{margin:14px 0 0;font-family:var(--f-display);font-size:.95rem}
+.chips{display:flex;gap:6px;margin:10px 0}
+.chip{flex:1;text-align:center;padding:7px 0;border-radius:6px;font-size:.78rem;font-weight:700;border:1px solid transparent}
+.chip span{display:block;font-size:1rem}
+.ok{background:rgba(47,107,94,.14);color:var(--good)}
+.no{background:rgba(154,77,34,.14);color:var(--bad)}
+.you{background:rgba(201,162,75,.2);color:var(--warn)}
 .rows{list-style:none;margin:0;padding:0}
-.rows li{display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.rows li{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:.94rem}
 .rows li:first-child{border:0}
-.mk{flex:none;width:18px;font-weight:700}
-.rows button{padding:1px 8px;font-size:12px;margin-left:6px;white-space:nowrap}
-.ex{background:var(--st);border:1px solid #C4DAC8;border-radius:8px;padding:11px 13px;font-size:13px;margin-top:8px}
-.ex b{display:block;font-size:12px;color:var(--sage);margin-bottom:3px}
-.note{font-size:12px;color:var(--soft)}
-</style></head><body><div class="wrap">
-<div class="top"><h1>SMART Objective Coach</h1>
-<p class="sub">Paste a draft objective (and its indicator, if you have one) and check it as many times as you like before you submit.</p></div>
+.mk{flex:none;width:20px;font-weight:700;background:none!important}
+.mk.ok{color:var(--good)}.mk.no{color:var(--bad)}.mk.you{color:var(--warn)}
+.rows .body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ex{background:var(--soft);border-left:4px solid var(--good);border-radius:0 8px 8px 0;padding:10px 12px;font-size:.94rem;margin-top:8px}
+.ex b{display:block;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.note{font-size:.86rem;color:var(--muted)}
+.summary{border-left:4px solid var(--gold);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.summary textarea{min-height:200px}
+.sumout{width:100%;display:flex;flex-direction:column;gap:8px}
+.gate{display:flex;flex-direction:column;gap:10px;align-items:flex-start;border-left:4px solid var(--gold)}
+.gate.done{border-left-color:var(--navy)}
+.gate .gmsg{color:var(--good);font-weight:600}
+.shield{position:fixed;inset:0;z-index:90;background:transparent}
+.cur{position:fixed;left:0;top:0;z-index:100;pointer-events:none;width:26px;height:26px;transition:transform .9s cubic-bezier(.4,0,.2,1);will-change:transform}
+.cur svg{width:26px;height:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.cur::after{content:"";position:absolute;left:-12px;top:-13px;width:30px;height:30px;border-radius:50%;border:3px solid var(--accent);opacity:0}
+.cur.click::after{animation:rip .45s ease-out}
+@keyframes rip{0%{opacity:.95;transform:scale(.4)}100%{opacity:0;transform:scale(1.5)}}
+.dbar{position:fixed;left:0;right:0;bottom:0;z-index:95;background:var(--surface);border-top:2px solid var(--navy);box-shadow:0 -6px 20px rgba(0,0,0,.14);padding-top:10px;padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.dbar .in{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.dline{font-size:1.05rem;min-height:2.9em;max-height:7.5em;overflow:auto}
+.meter{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--good)}
+@media (prefers-reduced-motion:reduce){.cur{transition-duration:0ms!important}}
+@media (max-width:520px){.chip{font-size:.66rem}}
+</style></head><body>
 
-<div class="card voice"><button id="hearIntro">▶ Hear the instructor's intro</button>
-<details><summary>Transcript</summary><p id="tIntro"></p></details></div>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">HPS 529 · SMART objectives</p>
+    <h1>SMART Objective Coach</h1>
+    <p class="lead">Paste a draft objective (and its indicator, if you have one) and check it as many times as you like before you submit.</p>
+  </header>
 
-<div class="card">
-<label for="typ">What kind of objective is this?</label>
-<select id="typ"><option value="process">Process (what you will do)</option><option value="outcome">Outcome (change you expect)</option></select>
-<label for="obj">Your draft objective</label>
-<textarea id="obj" placeholder="e.g., By December 2027, at least 200 adults aged 40+ in [County] who attended the program will report a 25% increase in knowledge of diabetes risk factors."></textarea>
-<label for="ind">Your indicator for this objective (optional)</label>
-<textarea id="ind" placeholder="e.g., Percent change in mean knowledge score, pre/post survey, among participants aged 40+ in [County], December 2027."></textarea>
-<p style="margin:12px 0 0"><button class="p" id="go">Check it</button> <span class="note" id="cnt"></span></p>
+  <div class="card intro">
+    <div class="aud"><button class="btn" data-aud="intro" aria-pressed="false">▶ Listen to the intro</button><span class="aud-st"></span></div>
+    <details><summary>Transcript</summary><p id="tIntro"></p></details>
+  </div>
+
+  <div class="card gate" id="demoCard">
+    <h2 id="gateTitle">Watch the demo to unlock the tool</h2>
+    <p id="gateText" class="muted"></p>
+    <p class="gmsg" id="gateMsg" role="status" aria-live="polite"></p>
+    <button class="btn primary" id="demoStart">▶ Start the demo</button>
+    <details style="width:100%"><summary>Demo transcript</summary><div id="demoTranscript"></div></details>
+  </div>
+
+  <div id="tool" hidden>
+    <div class="card">
+      <label class="lbl" for="typ">What kind of objective is this?</label>
+      <select id="typ"><option value="output">Output (things your program does)</option><option value="outcome">Outcome (change in knowledge, attitude, behavior or conditions)</option><option value="impact">Impact (long-term result)</option></select>
+      <label class="lbl" for="obj">Your draft objective</label>
+      <textarea id="obj" placeholder="e.g., By December 2027, at least 200 adults aged 40+ in [County] who attended the program will report a 25% increase in knowledge of diabetes risk factors."></textarea>
+      <label class="lbl" for="ind">Your indicator for this objective (optional)</label>
+      <textarea id="ind" placeholder="e.g., Percent change in mean knowledge score, pre/post survey, among participants aged 40+ in [County], December 2027."></textarea>
+      <p style="margin-top:12px"><button class="btn primary" id="go">Check it</button> <span class="note" id="cnt"></span></p>
+    </div>
+
+    <div class="card" id="res" hidden aria-live="polite">
+      <h3>How it holds up</h3><div class="chips" id="chips"></div><ul class="rows" id="rows"></ul>
+      <div id="indBox" hidden><h3 style="margin-top:14px">Indicator alignment</h3><ul class="rows" id="indRows"></ul></div>
+      <p class="note" style="margin-top:12px">This coach looks for patterns in your wording. It cannot judge meaning, and a clean check does not guarantee a grade. Achievable and Relevant are yours to judge, so the coach asks questions instead of scoring them.</p>
+    </div>
+
+    <div class="card" id="exBox" hidden><h3>See a worked example</h3>
+      <p class="note" id="exLock" style="margin-top:6px">Revise and check again to unlock a worked example on a different topic, so you learn the pattern without copying it. It shows all three levels of objective.</p>
+      <button class="btn" id="exBtn" hidden style="margin-top:8px">Show the example</button>
+      <div id="exOut" hidden>
+        <div class="ex"><b>Output objective</b>By March 2027, trained staff will deliver 8 falls-prevention classes to at least 120 adults aged 60+ in [Town].</div>
+        <div class="ex"><b>Outcome objective (initial)</b>By June 2027, at least 120 adults aged 60+ in [Town] who attended the classes will report a 20% increase in confidence doing balance exercises.</div>
+        <div class="ex"><b>Impact objective (long-term)</b>By December 2031, the number of fall-related injuries among adults aged 60+ in [Town] will fall by 15%.</div>
+        <div class="ex"><b>Indicator for the outcome objective</b>Percent change in mean balance-confidence score (pre vs. post survey) among class attendees aged 60+ in [Town], June 2027.</div>
+      </div>
+    </div>
+
+    <section class="card summary" id="sumCard">
+      <h2>Reflections on the tool</h2>
+      <p class="muted" id="sumIntro">When you're done, create a starter for your reflection on using the tool. It summarizes what you checked and how it held up, then adds prompts for your own thoughts. Copy it into your post. Nothing is saved or sent.</p>
+      <button class="btn primary" id="sumBtn">Create my reflection starter</button>
+      <div class="sumout" id="sumOut" hidden>
+        <textarea id="sumText" aria-label="Reflections on the tool"></textarea>
+        <div class="row"><span class="muted small">Bracketed parts are for you to complete.</span><button class="btn" id="sumCopy">Copy text</button></div>
+      </div>
+    </section>
+  </div>
 </div>
 
-<div class="card" id="res" hidden aria-live="polite">
-<h3>How it holds up</h3><div class="chips" id="chips"></div><ul class="rows" id="rows"></ul>
-<div id="indBox" hidden><h3 style="margin-top:14px">Indicator alignment</h3><ul class="rows" id="indRows"></ul></div>
-<p class="note" style="margin-top:12px">This coach looks for patterns in your wording. It cannot judge meaning, and a clean check does not guarantee a grade. Attainable and Realistic are yours to judge, so the coach asks questions instead of scoring them.</p>
+<div class="shield" id="shield" hidden></div>
+<div class="cur" id="cur" hidden aria-hidden="true"><svg viewBox="0 0 26 26"><path d="M3 2l17 8-7 2.4-3.2 7.2z" fill="#ffffff" stroke="#111111" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+<div class="dbar" id="dbar" hidden role="region" aria-label="Demo narration">
+  <div class="in">
+    <div class="row"><span class="tag" id="dstep">Demo</span><div class="hbtns"><button class="btn" id="dPause">❚❚ Pause</button><button class="btn" id="dClose" hidden>Close demo</button></div></div>
+    <p class="dline" id="dline" aria-live="polite"></p>
+    <div class="meter"><i id="dprog" style="width:0"></i></div>
+  </div>
 </div>
 
-<div class="card" id="exBox" hidden><h3>See a worked example</h3>
-<p class="note" id="exLock">Revise and check again to unlock a worked example on a different topic, so you learn the pattern without copying it.</p>
-<button id="exBtn" hidden>Show the example</button>
-<div id="exOut" hidden>
-<div class="ex"><b>Process objective</b>By March 2027, trained staff will deliver 8 falls-prevention classes to at least 120 adults aged 60+ in [Town].</div>
-<div class="ex"><b>Outcome objective</b>By June 2027, at least 120 adults aged 60+ in [Town] who attended the classes will report a 20% increase in confidence doing balance exercises.</div>
-<div class="ex"><b>Its indicator</b>Percent change in mean balance-confidence score (pre vs. post survey) among class attendees aged 60+ in [Town], June 2027.</div></div>
-</div>
-</div>
 <script>
-/* ---- Letter labels follow the assignment wording. The lecture slides use other words for A and R; change here after the instructor confirms. ---- */
-const L={s:'Specific',m:'Measurable',a:'Attainable',r:'Realistic',t:'Time-bound'};
-/* ---- INSTRUCTOR AUDIO: mp3 path per slot (same Course Files folder). Empty = computer-voice demo. ---- */
-const AUDIO={intro:"",s:"",m:"",a:"",r:"",t:"",i:""};
-const SCRIPT={
- intro:"Objectives answer five questions: who, what, where, how much, and by when. Write a draft, check it, and revise. You can check as many times as you like. Attainable and Realistic are judgment calls, so the coach will ask you questions instead of giving a grade.",
- s:"Specific means a reader could picture exactly who does what, and where. Name the population, the action, and the place.",
- m:"Measurable means a number. How many people, how many sessions, or what percent change? If you can't count it, you can't show it happened.",
- a:"Attainable asks whether your team can actually do this with the resources and time you have. Check your inputs in the logic model.",
- r:"Realistic asks whether this result is plausible given the evidence and your community. Don't promise more than a program like yours can deliver.",
- t:"Time-bound means a deadline. A calendar date is clearest. If you use a program length instead, say when it starts.",
- i:"Your indicator is how you will know the objective was met. It should use the same people, the same measure, and the same timeframe."};
-function speak(k){try{speechSynthesis.cancel()}catch(e){}
- if(AUDIO[k]){new Audio(AUDIO[k]).play();return}
- if('speechSynthesis' in window)speechSynthesis.speak(new SpeechSynthesisUtterance(SCRIPT[k]))}
-const $=id=>document.getElementById(id);
-$('tIntro').textContent=SCRIPT.intro;$('hearIntro').onclick=()=>speak('intro');
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const list=a=>a.length<3?a.join(' and '):a.slice(0,-1).join(', ')+', and '+a[a.length-1];
+window.addEventListener('unhandledrejection',e=>{if(e.reason==='abort')e.preventDefault();});
 
+/* ---- Wording follows the lecture slides (Week 3, SMART objectives): Specific, Measurable, Achievable, Relevant, Time-framed (slide 4); output-level, outcome and impact objectives (slides 6-10); indicators (slides 12-14); tips on outcomes (slide 17). ---- */
+const L={s:'Specific',m:'Measurable',a:'Achievable',r:'Relevant',t:'Time-framed'};
+const TYPES={output:'output',outcome:'outcome',impact:'impact'};
+
+/* ---- Audio scripts: the transcript shown on the page is this same text ---- */
+const SCRIPT={
+ intro:"Welcome to the SMART Objective Coach. SMART stands for Specific, Measurable, Achievable, Relevant, and Time-framed. Objectives are usually stated in behavioral terms, so a good one answers five questions: by when, who, where, what, and how much. There are three levels of objective. Output objectives are the things your program does. Outcome objectives are the immediate changes in knowledge, attitude, behavior, or conditions of the people you serve. Impact objectives are the long-term results. Write a draft objective, and an indicator if you have one, then press Check it. The coach looks for patterns in your wording and tells you which letters pass, which need work, and which are yours to judge. Achievable and Relevant are judgment calls, so the coach asks you questions instead of giving a grade. Revise and check again as many times as you like. After two checks, a worked example on a different topic unlocks. When you finish, create a reflection starter at the bottom of the page. You can pause any audio on this page and resume where you left off.",
+ s:"Specific means a reader could picture exactly who does what, and where. Check three things. Who: name the group, such as adults aged 60 and older, rather than just the community. What: use an action you could observe, such as deliver classes or report a change, rather than a vague goal like raise awareness. Where: name the place or setting, such as a town, a county, or a clinic. If you can't picture a person doing a thing in a place, add detail until you can.",
+ m:"Measurable means a number. Ask how many people, how many sessions, or what percent change. If you wrote increase, say by how much. Objectives contain the criteria for judging whether the program succeeds or fails, so if you can't count it, you can't show it happened. Pick a number you could realistically collect data on, such as a count from sign-in sheets or a percent change in a survey score.",
+ a:"Achievable asks whether your team can actually do this. The lecture says what a program can achieve depends on your resources, the program's duration, and the social, economic, and cultural conditions that affect participants. Look at your inputs, such as staff, funding, partners, and materials. If the target is very large, such as everyone, or eighty percent or more, point to the specific resource that makes it possible, or lower the target. The coach cannot score this one. It is your judgment.",
+ r:"Relevant asks whether the objective fits your program. The lecture gives four tips. First, do not go beyond the program's purpose or beyond the scope of your target population. Second, make sure the outcome is a direct result of your program and not of another system of influence. Third, do not assume that subpopulations will have the same outcomes. Fourth, consider unintended or negative outcomes. Also check that your objective matches its level. An outcome describes the change in participants right after the program. Long-term results such as lower incidence or mortality are impact. Output objectives describe what your program does.",
+ t:"Time-framed means a deadline. A calendar date, such as by June 2027, is the clearest. If you use a program length instead, such as within six months, say when it starts, so a reader can tell when the deadline falls. Think about when to expect the result. Initial outcomes come first, intermediate outcomes link them to longer-term outcomes, and impact comes last.",
+ i:"Your indicator answers the question: how do I know whether what I planned is actually happening or has happened? Indicators are specific changes that measure achievement of an outcome. They are directly related to the outcome, and they should be measurable and observable, meaning something that can be seen, heard, or read. The lecture says every indicator must itself be SMART, so name who and where, give a number, say when, and ask whether you can realistically collect the data. For example, a survey score, sign-in sheets, or clinic records. If the objective promises a twenty percent change, the indicator should measure that percent."};
+$('#tIntro').textContent=SCRIPT.intro;
+
+/* ---------- Audio: read-aloud using the browser's built-in voice; pause remembers the spot ---------- */
+const SS=window.speechSynthesis;
+const AP={};
+if(!SS)document.querySelectorAll('.aud').forEach(a=>{a.hidden=true;});
+const audLabel=id=>id==='intro'?'Listen to the intro':'Hear tip';
+function audUI(id){
+  const p=AP[id]||{state:'idle'};
+  document.querySelectorAll(`[data-aud="${id}"]`).forEach(b=>{
+    b.textContent=p.state==='playing'?'❚❚ Pause':p.state==='paused'?'▶ Resume':'▶ '+audLabel(id);
+    b.setAttribute('aria-pressed',String(p.state==='playing'));
+    const st=b.parentElement.querySelector('.aud-st');
+    if(st)st.textContent=p.state==='playing'?'Playing':p.state==='paused'?'Paused':'';
+  });
+}
+function pickVoice(){
+  const v=SS.getVoices().filter(x=>/^en(-|_|$)/i.test(x.lang));
+  return v.find(x=>/natural|online|aria|jenny|samantha|google us/i.test(x.name))||v.find(x=>/en[-_]us/i.test(x.lang))||v[0]||null;
+}
+function audSpeak(id){
+  const p=AP[id],full=SCRIPT[id];
+  const u=new SpeechSynthesisUtterance(full.slice(p.offset));
+  const v=pickVoice();if(v)u.voice=v;u.lang=v?v.lang:'en-US';u.rate=0.95;
+  p.base=p.offset;p.pos=p.offset;p.gen=(p.gen||0)+1;const g=p.gen;
+  u.onboundary=e=>{if(p.gen===g)p.pos=p.base+e.charIndex;};
+  const fin=()=>{if(p.gen===g&&p.state==='playing'){p.state='idle';p.offset=0;audUI(id);}};
+  u.onend=fin;
+  u.onerror=e=>{if(e.error!=='canceled'&&e.error!=='interrupted')fin();};
+  SS.cancel();SS.speak(u);
+}
+function audStop(id){const p=AP[id];if(!p)return;p.gen=(p.gen||0)+1;SS.cancel();p.state='idle';p.offset=0;audUI(id);}
+function audPause(id){const p=AP[id];p.gen=(p.gen||0)+1;p.offset=p.pos||p.offset||0;SS.cancel();p.state='paused';audUI(id);}
+function audPlay(id){
+  Object.keys(AP).forEach(k=>{if(k!==id&&AP[k].state==='playing')audPause(k);});
+  const p=AP[id]||(AP[id]={state:'idle',offset:0});
+  if(p.state==='idle')p.offset=0;
+  p.state='playing';audSpeak(id);audUI(id);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-aud]');if(!b||!SS)return;
+  const id=b.dataset.aud,p=AP[id];
+  if(p&&p.state==='playing')audPause(id);else audPlay(id);
+});
+window.__stopAud=()=>Object.keys(AP).forEach(k=>{if(AP[k].state!=='idle')audStop(k);});
+
+/* ---------- Checker (wording patterns) ---------- */
 const MON='(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*';
-const WHO=/\b(adults?|youth|women|men|children|kids|residents?|patients?|students?|parents?|families|caregivers?|workers?|chws?|staff|participants?|mothers|adolescents?|teens?|seniors?|elders?|older|clients|people|farmers|teachers|nurses|providers|households|community members)\b/i;
+const WHO=/\b(adults?|youth|women|men|children|kids|residents?|patients?|students?|parents?|families|caregivers?|workers?|chws?|staff|participants?|mothers|adolescents?|teens?|seniors?|elders?|older|clients|people|farmers|teachers|nurses|providers|households|attendees?|employers?|agenc(y|ies)|organi[sz]ations?|communities|community members)\b/i;
 const WHERE=/\b(in|at|across|within|throughout)\s+(the\s+)?[A-Z\[][\w\[\]]+|\b(county|district|village|clinic|school|neighborhood|region|town|city|province|parish|ward|reservation)\b/;
-const VERB=/\b(conduct|deliver|hold|host|train|recruit|distribute|screen|enroll|reach|provide|offer|complete|develop|establish|implement|increase|decrease|reduce|improve|report|demonstrate|adopt|attend|receive|achieve|identify|refer|create|publish|hire|launch|produce|hold|organize|gain|show|use|practice)\w*/i;
-const VAGUE=/\b(raise|increase|improve|enhance|promote|strengthen|foster|boost)\s+(the\s+)?(awareness|understanding|health|knowledge|quality|access|wellbeing|well-being)\b/i;
-const CHANGE=/\b(increase|decrease|reduce|improv|report|demonstrate|adopt|gain|lower|raise|change|higher)/i;
+const VERB=/\b(conduct|deliver|hold|host|train|recruit|distribute|screen|enroll|reach|provide|offer|complete|develop|establish|implement|increase|decrease|reduce|improve|report|demonstrate|adopt|attend|receive|achieve|identify|refer|create|publish|hire|launch|produce|hold|organize|gain|show|use|practice|convert|control|learn|discuss|institute|share|preserve|meet|enjoy|lower|declin|drop|fall(s)?\s+(by|to))\w*/i;
+const VAGUE=/\b(raise|increase|improve|enhance|promote|strengthen|foster|boost)\s+(the\s+)?(awareness|health|quality|access|wellbeing|well-being)\b/i;
+const CHANGE=/\b(increase|decrease|reduce|improv|report|demonstrate|adopt|gain|lower|raise|change|higher|implement|learn|practice|discuss|control|convert|institute|share|preserve|meet|enjoy|declin|drop|fall(s)?\s+(by|to)|fell)/i;
 const DOING=/\b(conduct|deliver|hold|host|train|recruit|distribute|hire|launch|organize|develop|establish|create|publish|provide|offer)\w*/i;
 const LONGT=/\b(mortality|incidence|prevalence|death|deaths|complication|life expectancy|poverty|obesity rates?)\b/i;
-function clean(t){return t.replace(new RegExp('\\b'+MON+'\\.?(\\s+\\d{1,2},?)?(\\s+(19|20)\\d\\d)?','gi'),' ').replace(/\b(19|20)\d\d\b/g,' ')
+function clean(t){return t.replace(new RegExp('\\b'+MON+'\\.?(\\s+\\d{1,2}\\b,?)?(\\s+(19|20)\\d\\d)?','gi'),' ').replace(/\b(19|20)\d\d\b/g,' ')
  .replace(/\b\d+[- ]?(weeks?|months?|years?|days?)\b/gi,' ').replace(/\b(aged?|ages?)\s*\d+(\s*(-|–|to|and)\s*\d+|\+)?/gi,' ').replace(/\b\d{2}\+/g,' ')}
-function months(t){const m=t.match(/(\d+)[- ]?(week|month|year)/i);if(!m)return null;const n=+m[1];return /week/i.test(m[2])?n/4.3:/year/i.test(m[2])?n*12:n}
 
 function check(t,type){
  const nd=clean(t),R=[];
- const who=WHO.test(t),where=WHERE.test(t),verb=VERB.test(t),vague=VAGUE.test(t),num=/\d/.test(nd)||/\b(all|half|every|majority|most)\b/i.test(nd);
- const miss=[];if(!who)miss.push('who (the specific group)');if(!verb)miss.push('what (an action you can observe)');if(!where)miss.push('where (place or setting)');
+ const where=WHERE.test(t),verb=VERB.test(t),vague=VAGUE.test(t),num=/\d/.test(nd)||/\b(all|half|every|majority|most)\b/i.test(nd);
+ /* an impact objective can name a population by place (e.g. incidence in [County]) */
+ const who=WHO.test(t)||(type==='impact'&&where);
+ const miss=[];if(!who)miss.push('who (the specific group)');if(!verb)miss.push('what (an action or change you can observe)');if(!where)miss.push('where (place or setting)');
  let s={k:'s'};
- if(miss.length){s.st='no';s.tx='Missing: '+miss.join(', ')+'. Who exactly, doing what, and where?'}
- else if(vague){s.st='no';s.tx='"'+t.match(VAGUE)[0]+'" is vague. Awareness of what? What will people know or do differently, and how would you see it?'}
+ if(miss.length){s.st='no';s.tx='Missing: '+miss.join(', ')+'. Objectives are usually stated in behavioral terms: who exactly, doing what, and where?'}
+ else if(vague){s.st='no';s.tx='"'+t.match(VAGUE)[0]+'" is hard to observe. What will people know, do, or have after your program (a change in knowledge, attitude, behavior, or conditions), and how would you see it?'}
  else{s.st='ok';s.tx='Names who, what, and where.'}
  R.push(s);
  const m={k:'m'};
@@ -111,52 +263,294 @@ function check(t,type){
  R.push(m);
  const pct=Math.max(0,...(t.match(/(\d+)\s*%/g)||[]).map(x=>parseInt(x))),big=Math.max(0,...((nd.match(/\d[\d,]*/g)||[]).map(x=>+x.replace(/,/g,''))));
  const a={k:'a'};
- if(/\b(all|every|100\s*%|eliminate|eradicate|zero|end)\b/i.test(nd)||pct>=80||big>=5000){a.st='no';a.tx='This target looks very ambitious. Can your team, budget and timeline really deliver it? Which input in your logic model makes it possible?'}
- else{a.st='you';a.tx='You decide: can your team deliver this with the resources and time you have? Point to the inputs that make it possible.'}
+ if(/\b(all|every|100\s*%|eliminate|eradicate|zero|end)\b/i.test(nd)||pct>=80||big>=5000){a.st='no';a.tx='This target looks very ambitious. What you can achieve depends on your resources, program duration, and the conditions affecting participants. Which resource makes it possible?'}
+ else{a.st='you';a.tx='You decide: can your team achieve this given your resources, program duration, and the conditions affecting participants? Point to what makes it possible.'}
  R.push(a);
- const mo=months(t),r={k:'r'};
- if(LONGT.test(t)&&(mo===null||mo<=24)){r.st='no';r.tx='Changes in rates like incidence or mortality usually take longer than a short project and are hard to credit to one program. Consider a nearer-term outcome.'}
- else if(type==='outcome'&&!CHANGE.test(t)){r.st='no';r.tx='You marked this an outcome, but no change is described. What will be different in the people you serve?'}
- else if(type==='process'&&CHANGE.test(t)&&!DOING.test(t)){r.st='you';r.tx='This reads like an outcome (a change). If it is, switch the type above. Either way, ask: is it plausible given the evidence you found?'}
- else{r.st='you';r.tx='You decide: is this plausible given your evidence and community, and within your program\'s purpose and population?'}
- if(type==='process'&&CHANGE.test(t)&&!DOING.test(t)&&r.st==='you'){}
+ const r={k:'r'};
+ if(type==='outcome'&&LONGT.test(t)){r.st='no';r.tx='This reads like an impact: a long-term result such as lower incidence or mortality. Outcomes are the immediate effects on participants. Switch the type to Impact, or choose an effect such as knowledge, attitude, or behavior.'}
+ else if(type==='outcome'&&!CHANGE.test(t)){r.st='no';r.tx='You marked this an outcome, but no change in knowledge, attitude, behavior, or conditions is described. What will the target population look like after your program?'}
+ else if(type==='impact'&&!CHANGE.test(t)){r.st='no';r.tx='You marked this an impact, but no long-term change is described. What is the ultimate result you want for participants or the population?'}
+ else if(type==='impact'){r.st='you';r.tx='You decide: is this long-term result a direct result of your program, and not of another system of influence? Does your program duration and resources allow it? Have you considered unintended or negative outcomes?'}
+ else if(type==='output'&&CHANGE.test(t)&&!DOING.test(t)){r.st='you';r.tx='This reads like an outcome (a change in people). If it is, switch the type above. Either way, ask: does it stay within your program\'s purpose and target population?'}
+ else{r.st='you';r.tx='You decide: does this stay within your program\'s purpose and target population, and is it a direct result of your program, not another system of influence? Have you considered unintended or negative outcomes?'}
  R.push(r);
  const cal=new RegExp('\\b'+MON+'\\b|\\b(19|20)\\d\\d\\b','i').test(t),rel=/\b(by|within|during|before|over)\b[^.]*\b(\d+[- ]?(weeks?|months?|years?|days?)|end of|semester|quarter|program|intervention|project|week\s*\d+)/i.test(t),tt={k:'t'};
  if(cal){tt.st='ok';tt.tx='Includes a calendar date.'}
  else if(rel){tt.st='you';tt.tx='You used a program length, not a date. That can work if the start is clear. A calendar date ("By June 2027") is the safer pattern.'}
  else{tt.st='no';tt.tx='No deadline found. By when will this happen?'}
  R.push(tt);
- if(type==='outcome'&&DOING.test(t)&&!CHANGE.test(t))s.tx+=' Note: this reads like a process objective. Check the type.';
+ if(type!=='output'&&DOING.test(t)&&!CHANGE.test(t))s.tx+=' Note: this reads like an output objective (something your program does). Check the type.';
  return R}
 
+/* Indicators (slides 12-14): measurable, observable (seen, heard or read), directly related to the outcome, and themselves SMART */
 function align(o,i){
  const R=[],ni=clean(i),no=clean(o);
- R.push(/\d/.test(ni)||/\b(percent|proportion|number of|rate|score)\b/i.test(i)?['ok','Has a number or measurable quantity.']:['no','No number or measure found. What exactly will you count or score?']);
- R.push(/\b(number of|percent|proportion|%|score|survey|pre\/?post|questionnaire|attendance|records|log|sign-in|observation|interview|report)/i.test(i)?['ok','Names something you can see, count or collect.']:['no','What can you see, hear or collect to show this? (a survey score, sign-in sheets, clinic records)']);
+ R.push(/\d/.test(ni)||/\b(percent|proportion|number of|rate|score)\b/i.test(i)?['ok','Measurable: has a number or measurable quantity.']:['no','Measurable: no number or measure found. What exactly will you count or score?']);
+ R.push(/\b(number of|percent|proportion|%|score|survey|pre\/?post|questionnaire|attendance|records|log|sign-in|observation|interview|report)/i.test(i)?['ok','Observable: names something that can be seen, heard, or read.']:['no','Observable: what can be seen, heard, or read to show this? (a survey score, sign-in sheets, clinic records)']);
  const w=s=>new Set((s.toLowerCase().match(/[a-z]{5,}/g)||[]).filter(x=>!/^(their|there|which|among|about|would|other|these|those|percent|number|before|after|during|within|will|least)$/.test(x)));
  const A=w(o),B=w(i),sh=[...A].filter(x=>B.has(x));
- R.push(sh.length>=2?['ok','Shares key words with the objective ('+sh.slice(0,4).join(', ')+').']:['no','Few shared words with the objective. Does it name the same people, place and change?']);
+ R.push(sh.length>=2?['ok','Related to the outcome: shares key words with the objective ('+sh.slice(0,4).join(', ')+').']:['no','Related to the outcome: few shared words with the objective. Does it make sense in relation to the outcome, and name the same people, place and change?']);
+ R.push(WHO.test(i)&&WHERE.test(i)?['ok','Specific: names who and where.']:['no','Specific: who and where? Name the group and the place or setting you will measure.']);
  const on=(no.match(/\d[\d,.]*/g)||[]).map(x=>x.replace(/,/g,'')),inn=(ni.match(/\d[\d,.]*/g)||[]).map(x=>x.replace(/,/g,''));
  if(on.length&&inn.length&&!on.some(x=>inn.includes(x)))R.push(['you','Your objective and indicator use different numbers. Is that intentional, or should the target match?']);
  const ct=new RegExp('\\b'+MON+'\\b|\\b(19|20)\\d\\d\\b|\\b\\d+[- ]?(weeks?|months?|years?)','i');
- R.push(ct.test(i)?['ok','Includes a timeframe.']:['no','No timeframe. When will you measure it?']);
+ R.push(ct.test(i)?['ok','Time-framed: includes a timeframe.']:['no','Time-framed: no timeframe. When will you measure it?']);
+ R.push(['you','Achievable and Relevant are yours to judge: can you realistically collect this data, and does it make sense in relation to the outcome?']);
  return R}
 
-let n=0;const M={ok:'✓',no:'!',you:'?'};
-function li(st,tx,k){const e=document.createElement('li');
- e.innerHTML='<span class="mk '+st+'" style="background:none">'+M[st]+'</span><span></span>';
- e.lastChild.textContent=tx;
- if(k&&st!=='ok'){const b=document.createElement('button');b.textContent='▶ Hear tip';b.onclick=()=>speak(k);e.lastChild.appendChild(b)}
- return e}
-$('go').onclick=()=>{
- const o=$('obj').value.trim();if(o.length<15){$('obj').focus();return}
- const R=check(o,$('typ').value),ch=$('chips'),rw=$('rows');ch.innerHTML='';rw.innerHTML='';
- R.forEach(x=>{const c=document.createElement('div');c.className='chip '+x.st;c.innerHTML='<span>'+x.k.toUpperCase()+'</span>'+L[x.k]+' '+M[x.st];ch.appendChild(c);
-  rw.appendChild(li(x.st,L[x.k]+': '+x.tx,x.k))});
- const i=$('ind').value.trim(),ib=$('indBox');
- if(i){const ir=$('indRows');ir.innerHTML='';align(o,i).forEach(a=>ir.appendChild(li(a[0],a[1],'i')));ib.hidden=false}else ib.hidden=true;
- $('res').hidden=false;$('exBox').hidden=false;n++;$('cnt').textContent='Checks so far: '+n;
- if(n>=2){$('exLock').hidden=true;$('exBtn').hidden=false}
- $('res').scrollIntoView({behavior:'smooth',block:'nearest'})};
-$('exBtn').onclick=()=>{$('exOut').hidden=false;$('exBtn').hidden=true};
+/* ---------- UI state (everything on screen is drawn from S so the demo can restore it) ---------- */
+const S={n:0,last:{},shown:null,exOpen:false};
+const M={ok:'✓',no:'!',you:'?'};
+function li(st,tx,k){
+  const e=document.createElement('li');
+  e.innerHTML='<span class="mk '+st+'">'+M[st]+'</span><div class="body"><span></span></div>';
+  e.querySelector('.body span').textContent=tx;
+  if(k&&st!=='ok'){
+    const w=document.createElement('div');w.className='aud';
+    w.innerHTML='<button class="btn sm" data-aud="'+k+'" aria-pressed="false">▶ Hear tip</button><span class="aud-st"></span>';
+    e.querySelector('.body').appendChild(w);
+    const d=document.createElement('details');d.innerHTML='<summary>Transcript</summary><p></p>';
+    d.querySelector('p').textContent=SCRIPT[k];
+    e.querySelector('.body').appendChild(d);
+  }
+  return e;
+}
+function renderAll(){
+  const sh=S.shown;
+  $('#res').hidden=!sh;$('#exBox').hidden=!sh;
+  if(sh){
+    const ch=$('#chips'),rw=$('#rows');ch.innerHTML='';rw.innerHTML='';
+    sh.R.forEach(x=>{const c=document.createElement('div');c.className='chip '+x.st;c.innerHTML='<span>'+x.k.toUpperCase()+'</span>'+L[x.k]+' '+M[x.st];ch.appendChild(c);rw.appendChild(li(x.st,L[x.k]+': '+x.tx,x.k));});
+    const ir=$('#indRows');ir.innerHTML='';
+    if(sh.A){sh.A.forEach(a=>ir.appendChild(li(a[0],a[1],'i')));$('#indBox').hidden=false;}else $('#indBox').hidden=true;
+    ['s','m','a','r','t','i'].forEach(audUI);
+  }
+  $('#cnt').textContent=S.n?'Checks so far: '+S.n:'';
+  const unlocked=S.n>=2;
+  $('#exLock').hidden=unlocked;
+  $('#exBtn').hidden=!unlocked||S.exOpen;
+  $('#exOut').hidden=!S.exOpen;
+}
+$('#go').onclick=()=>{
+  const o=$('#obj').value.trim();if(o.length<15){$('#obj').focus();return}
+  const type=$('#typ').value,i=$('#ind').value.trim();
+  const R=check(o,type),A=i?align(o,i):null;
+  S.shown={o,i,type,R,A};S.last[type]=S.shown;S.n++;
+  renderAll();
+  if(!dm.on)$('#res').scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+$('#exBtn').onclick=()=>{S.exOpen=true;renderAll();};
+
+/* ---------- Reflections on the tool ---------- */
+function names(R,st){return R.filter(x=>x.st===st).map(x=>L[x.k]);}
+function buildSummary(){
+  const ty=['output','outcome','impact'].filter(k=>S.last[k]);
+  if(!ty.length)return 'Check at least one objective first, then create your reflection starter.';
+  let s=`I used the SMART Objective Coach to check my draft objectives. I ran ${S.n} check${S.n===1?'':'s'} in all and revised between checks. `;
+  ty.forEach(k=>{
+    const e=S.last[k],no=names(e.R,'no'),ok=names(e.R,'ok');
+    s+=`\n\nMy latest ${k} objective: "${e.o}" `;
+    s+=no.length?`The coach still flagged ${list(no)}. `:'The coach flagged no letters. ';
+    if(ok.length)s+=`It passed on ${list(ok)}. `;
+    s+='Achievable and Relevant are mine to judge: [explain why my team can achieve this with our resources and duration, and how it fits our program purpose and target population, citing evidence]. ';
+    if(e.A){const bad=e.A.filter(x=>x[0]==='no').length;s+=`Its indicator: "${e.i}" The alignment check flagged ${bad} of ${e.A.length} points. `;}
+  });
+  return s+'\n\n[What did the coach flag first, and how did I revise?] [Is each outcome a direct result of my program, and what unintended or negative outcomes did I consider?] [What was easy or hard about using the tool?] [What would you change or add?]';
+}
+$('#sumBtn').addEventListener('click',()=>{$('#sumText').value=buildSummary();$('#sumOut').hidden=false;});
+$('#sumCopy').addEventListener('click',()=>{
+  const ta=$('#sumText');
+  const done=()=>{$('#sumCopy').textContent='Copied';setTimeout(()=>$('#sumCopy').textContent='Copy text',1500);};
+  try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();});}catch(_){ta.select();}
+});
+
+/* ---------- Narrated demo (paced by the narration; pause freezes both voice and cursor) ---------- */
+const dm={on:false,paused:false,id:0,gen:0,pend:null,pos:0,replay:false,spd:window.__DEMO_SPEED||1,snap:null,group:''};
+const cur=$('#cur');
+let cx=0,cy=0;
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function W(ms){
+  const id=dm.id;let left=ms*dm.spd;
+  return new Promise((res,rej)=>{
+    const t=()=>{
+      if(dm.id!==id)return rej('abort');
+      if(!dm.paused)left-=50;
+      if(left<=0)res();else setTimeout(t,50);
+    };
+    t();
+  });
+}
+function setCur(x,y,dur){
+  cx=x;cy=y;
+  cur.style.transitionDuration=(dur*dm.spd)+'ms';
+  cur.style.transform=`translate(${x}px,${y}px)`;
+}
+async function mv(el,o={}){
+  if(!el)return;
+  let r=el.getBoundingClientRect();
+  if(!o.fixed&&(r.top<90||r.bottom>innerHeight-200)){
+    el.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+    await W(800);r=el.getBoundingClientRect();
+  }
+  const dur=o.dur||900;
+  setCur(r.left+r.width*(o.fx==null?.5:o.fx),r.top+r.height*(o.fy==null?.5:o.fy),dur);
+  await W(dur+80);
+}
+async function clk(el){
+  cur.classList.add('click');await W(160);
+  if(el){if(el.focus)el.focus({preventScroll:true});el.click();}
+  await W(300);cur.classList.remove('click');
+}
+async function typ(el,text,cps){
+  el.focus({preventScroll:true});el.value='';
+  for(const ch of text){el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await W(1000/(cps||30));}
+}
+const row=n=>document.querySelector(`#rows li:nth-child(${n})`);
+const D1={o:'We will raise awareness of high blood pressure in our community.',i:'Survey results.'};
+const D2={o:'At least 80 adults in [County] will report a 30% increase in knowledge of high blood pressure risk factors.',i:'Percent change in mean knowledge score, pre and post survey, among adult participants in [County], June 2027.'};
+const D3='By June 2027, at least 80 adults in [County] will report a 30% increase in knowledge of high blood pressure risk factors.';
+
+const DEMO=[
+ {g:'Overview',t:'This demo shows how to use the SMART Objective Coach, in about three minutes. You need to watch it to the end before the tool unlocks.',a:async()=>{await mv($('h1'),{dur:1000});}},
+ {t:'You can pause the demo at any time with this button, and resume where you left off.',a:async()=>{await mv($('#dPause'),{dur:1100,fixed:true});}},
+ {t:'The intro audio gives the big picture. Every audio button on this page has a pause button and a transcript.',a:async()=>{await mv($('[data-aud="intro"]'),{dur:1000});await mv($('.intro summary'),{dur:900});}},
+ {g:'Step 1: write a draft',t:'Start by choosing what kind of objective you are checking. An output objective is something your program does, such as deliver classes. An outcome objective is the change you expect in knowledge, attitude, behavior, or conditions. An impact objective is the long-term result. I will choose outcome.',a:async()=>{await mv($('#typ'),{dur:1100});await clk($('#typ'));$('#typ').value='outcome';await W(300);}},
+ {t:'Next, type your draft objective in this box. Here is a deliberately weak first draft, the kind many of us write at first.',a:async()=>{await mv($('#obj'),{dur:1000});await clk($('#obj'));await typ($('#obj'),D1.o,10);}},
+ {t:'The indicator box is optional, but use it. The indicator is how you will know the objective was met. I will write a quick one.',a:async()=>{await mv($('#ind'),{dur:1000});await clk($('#ind'));await typ($('#ind'),D1.i,6);}},
+ {t:'Now press Check it. You can check as many times as you like.',a:async()=>{await mv($('#go'),{dur:900});await clk($('#go'));await W(400);}},
+ {g:'Step 2: read the results',t:'Each of the five letters gets a chip. Green with a check passes. Red with an exclamation mark needs fixing. Gold with a question mark means the judgment is yours. Notice that T stands for Time-framed.',a:async()=>{
+    const c=document.querySelectorAll('#chips .chip');await mv(c[0],{dur:1000});await mv(c[2],{dur:1100});await mv(c[4],{dur:1100});}},
+ {t:'Specific is red. It is missing who, what, and where. Measurable is red because there is no number. Time-framed is red because there is no deadline.',a:async()=>{await mv(row(1),{dur:1000,fx:.3});await mv(row(2),{dur:1500,fx:.3});await mv(row(5),{dur:2500,fx:.3});}},
+ {t:'Achievable and Relevant are gold. The coach cannot judge these, so it asks you questions. You decide whether your team can achieve this with its resources, and whether it fits your program purpose and target population.',a:async()=>{await mv(row(3),{dur:1500,fx:.3});await mv(row(4),{dur:3000,fx:.3});}},
+ {t:'Below, the indicator check asks whether your indicator is measurable, observable, related to the outcome, specific, and time-framed. Here it found problems.',a:async()=>{await mv($('#indRows li:first-child'),{dur:1200,fx:.3});await mv($('#indRows li:nth-child(4)'),{dur:2000,fx:.3});}},
+ {t:'Press Hear tip next to any flag for detailed audio advice. Each tip has a pause button, and a transcript you can open here.',a:async()=>{const li1=row(1);await mv(li1.querySelector('[data-aud]'),{dur:1100});await mv(li1.querySelector('summary'),{dur:900});}},
+ {g:'Step 3: revise and check again',t:'Now revise. I will name a group, add a number, and give a place: at least 80 adults in a county will report a 30 percent increase in knowledge. I will also strengthen the indicator.',a:async()=>{
+    await mv($('#obj'),{dur:1200});await clk($('#obj'));await typ($('#obj'),D2.o,14);
+    await mv($('#ind'),{dur:900});await clk($('#ind'));await typ($('#ind'),D2.i,18);}},
+ {t:'Check again. Specific and Measurable now pass, and the indicator passes its checks. There is still no deadline, so Time-framed is red.',a:async()=>{await mv($('#go'),{dur:1000});await clk($('#go'));await W(500);await mv(row(5),{dur:1300,fx:.3});}},
+ {t:'The counter here shows how many checks you have run. After two checks, a worked example unlocks, on a different topic, so you learn the pattern without copying it.',a:async()=>{await mv($('#cnt'),{dur:1000});await mv($('#exBtn'),{dur:1100});await clk($('#exBtn'));await mv($('#exOut'),{dur:1000,fy:.2});}},
+ {t:'Back to my draft. I will add a calendar date, like by June 2027, and check once more.',a:async()=>{await mv($('#obj'),{dur:1100});await clk($('#obj'));await typ($('#obj'),D3,12);await mv($('#go'),{dur:900});await clk($('#go'));await W(400);}},
+ {t:'Now every letter either passes or asks for your judgment. A clean check is a good sign, but it does not guarantee a grade, since the coach reads wording and not meaning.',a:async()=>{const c=document.querySelectorAll('#chips .chip');await mv(c[0],{dur:1000});await mv(c[4],{dur:2500});}},
+ {g:'Wrap-up',t:'Last, the Reflections on the tool card. Press Create, and it builds a starter that summarizes your latest check of each type of objective, with prompts for your own thoughts.',a:async()=>{await mv($('#sumBtn'),{dur:1300});await clk($('#sumBtn'));await mv($('#sumText'),{dur:1000,fy:.3});}},
+ {t:'Add your thoughts where the brackets are, then copy it into your discussion post. Nothing is saved or sent, so copy your work before closing the page.',a:async()=>{await mv($('#sumCopy'),{dur:1200});}},
+ {t:'When this demo ends, the tool resets, so you can enter your own objectives. Remember to use the tip buttons whenever the coach flags something.',a:async()=>{await mv($('#obj'),{dur:1200});}}
+];
+(function(){
+  let h='',open=false;
+  DEMO.forEach(s=>{if(s.g){if(open)h+='</p>';h+=`<h4>${esc(s.g)}</h4><p>`;open=true;}h+=esc(s.t)+' ';});
+  $('#demoTranscript').innerHTML=h+'</p>';
+})();
+
+function utter(text,id){
+  return new Promise(res=>{
+    if(!SS){
+      let left=Math.max(1200,text.split(/\s+/).length*380)*dm.spd;dm.pos=0;dm.pend=res;
+      const t=()=>{if(dm.id!==id||dm.pend!==res)return;left-=50;if(left<=0){dm.pend=null;res({done:true});}else setTimeout(t,50);};t();
+      return;
+    }
+    const u=new SpeechSynthesisUtterance(text);
+    const v=pickVoice();if(v)u.voice=v;u.lang=v?v.lang:'en-US';u.rate=1;
+    dm.pos=0;const gen=++dm.gen;
+    u.onboundary=e=>{if(dm.gen===gen)dm.pos=e.charIndex;};
+    const fin=()=>{if(dm.gen===gen&&dm.pend===res){dm.pend=null;res({done:true});}};
+    u.onend=fin;
+    u.onerror=e=>{if(e.error==='canceled'||e.error==='interrupted')return;fin();};
+    dm.pend=res;SS.cancel();SS.speak(u);
+    setTimeout(()=>{if(dm.gen===gen&&dm.pend===res){dm.pend=null;SS.cancel();res({done:true});}},Math.max(4000,text.length*120)*dm.spd);
+  });
+}
+async function speakSeg(text,id){
+  let off=0;
+  while(true){
+    if(dm.id!==id)throw 'abort';
+    if(dm.paused){await new Promise(r=>setTimeout(r,100));continue;}
+    const r=await utter(text.slice(off),id);
+    if(r.done)return;
+    off+=r.pos;
+  }
+}
+function dPause(){
+  if(!dm.on)return;
+  if(!dm.paused){
+    dm.paused=true;
+    if(dm.pend){const r=dm.pend;dm.pend=null;if(SS)SS.cancel();r({done:false,pos:dm.pos});}
+    $('#dPause').textContent='▶ Resume';
+  }else{dm.paused=false;$('#dPause').textContent='❚❚ Pause';}
+}
+$('#dPause').addEventListener('click',dPause);
+$('#dClose').addEventListener('click',()=>endDemo(false));
+
+/* completion is remembered per browser; if storage is blocked the gate shows each visit */
+const KEY='smart-demo-done-v1';let memDone=false;
+const getDone=()=>{try{return localStorage.getItem(KEY)==='1'||memDone;}catch(_){return memDone;}};
+const setDone=()=>{memDone=true;try{localStorage.setItem(KEY,'1');}catch(_){}};
+function renderGate(){
+  const done=getDone();
+  $('#tool').hidden=!(done||dm.on);
+  $('#demoCard').classList.toggle('done',done);
+  $('#gateTitle').textContent=done?'Demo':'Watch the demo to unlock the tool';
+  $('#gateText').textContent=done?'You have watched the demo. Replay it any time. Your work is restored when it ends.':'A narrated walkthrough of about three minutes shows exactly what to click. You can pause it, but you need to watch it to the end before you start.';
+  $('#demoStart').textContent=done?'↻ Replay demo':'▶ Start the demo';
+}
+function snapshot(){
+  return {S:JSON.parse(JSON.stringify(S)),typ:$('#typ').value,obj:$('#obj').value,ind:$('#ind').value,sumText:$('#sumText').value,sumOpen:!$('#sumOut').hidden};
+}
+function restore(s){
+  S.n=s.S.n;S.last=s.S.last;S.shown=s.S.shown;S.exOpen=s.S.exOpen;
+  $('#typ').value=s.typ;$('#obj').value=s.obj;$('#ind').value=s.ind;
+  $('#sumText').value=s.sumText;$('#sumOut').hidden=!s.sumOpen;
+  renderAll();
+}
+function blank(){
+  S.n=0;S.last={};S.shown=null;S.exOpen=false;
+  $('#typ').value='output';$('#obj').value='';$('#ind').value='';$('#sumText').value='';$('#sumOut').hidden=true;
+  renderAll();
+}
+function endDemo(completed){
+  dm.id++;dm.on=false;dm.paused=false;
+  if(dm.pend){const r=dm.pend;dm.pend=null;r({done:true});}
+  if(SS)SS.cancel();
+  ['#shield','#cur','#dbar'].forEach(s=>{$(s).hidden=true;});
+  document.body.classList.remove('demo-on');
+  $('#dPause').textContent='❚❚ Pause';
+  if(dm.snap){restore(dm.snap);dm.snap=null;}
+  if(completed){setDone();$('#gateMsg').textContent='Demo complete. The tool is unlocked below.';}
+  renderGate();
+  if(completed)$('#tool').scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});
+}
+async function startDemo(){
+  if(dm.on)return;
+  if(window.__stopAud)window.__stopAud();
+  dm.snap=snapshot();dm.replay=getDone();dm.on=true;dm.paused=false;
+  const id=++dm.id;
+  $('#gateMsg').textContent='';
+  blank();renderGate();
+  window.scrollTo(0,0);
+  document.body.classList.add('demo-on');
+  ['#shield','#cur','#dbar'].forEach(s=>{$(s).hidden=false;});
+  $('#dClose').hidden=!dm.replay;
+  setCur(innerWidth/2,innerHeight/3,0);
+  try{
+    for(let i=0;i<DEMO.length;i++){
+      const s=DEMO[i];
+      if(s.g)dm.group=s.g;
+      $('#dstep').textContent=`Demo · ${dm.group} · ${i+1} of ${DEMO.length}`;
+      $('#dline').textContent=s.t;
+      $('#dprog').style.width=(i/DEMO.length*100)+'%';
+      await Promise.all([speakSeg(s.t,id),s.a?s.a():Promise.resolve()]);
+      await W(250);
+    }
+    $('#dprog').style.width='100%';
+    endDemo(true);
+  }catch(e){if(e!=='abort'){console.error(e);endDemo(false);}}
+}
+$('#demoStart').addEventListener('click',startDemo);
+const sh=$('#shield');
+sh.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+sh.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+window.__demo={start:startDemo};
+
+renderAll();
+renderGate();
+})();
 </script></body></html>
