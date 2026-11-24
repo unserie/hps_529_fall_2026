@@ -1,1 +1,756 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Sustainability Readiness Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&display=swap">
+<style>
+/* Layout: header, intro audio card, demo gate card, then the tool (four step tabs: Describe and rate, Challenges and strategies, Add sources, Draft; reflections card). A narrated demo drives the real UI with a moving cursor under a fixed bottom bar. */
+:root{
+  --bg:#f3f1ec; --surface:#ffffff; --ink:#222222; --muted:#5f5f5a; --line:#dcd8cd;
+  --navy:#2f6b5e; --accent:#2f6b5e; --accent-ink:#ffffff; --soft:#efede6; --gold:#c9a24b;
+  --d1:#2f6b5e; --d2:#3b6a9e; --d3:#8a5a9e;
+  --b-bg:#f3e3df; --s-bg:#e0efe8;
+  --good:#2f6b5e; --warn:#8a6a12;
+  --f-display:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --f-body:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1a1c1a; --surface:#242724; --ink:#ecebe6; --muted:#aeada5; --line:#3a3d39;
+    --navy:#7fc2af; --accent:#7fc2af; --accent-ink:#0f1f1a; --soft:#2d312d; --gold:#d9b35c;
+    --d1:#7fc2af; --d2:#8fb4ee; --d3:#cf9fe0;
+    --b-bg:#43292a; --s-bg:#1f3a30;
+    --good:#7fc2af; --warn:#e0b95a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1a1c1a; --surface:#242724; --ink:#ecebe6; --muted:#aeada5; --line:#3a3d39;
+  --navy:#7fc2af; --accent:#7fc2af; --accent-ink:#0f1f1a; --soft:#2d312d; --gold:#d9b35c;
+  --d1:#7fc2af; --d2:#8fb4ee; --d3:#cf9fe0;
+  --b-bg:#43292a; --s-bg:#1f3a30;
+  --good:#7fc2af; --warn:#e0b95a; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.demo-on{padding-bottom:190px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:1.9rem}
+h2{font-size:1.25rem}
+h3{font-size:1rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.eyebrow{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.hl{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:6px;font-weight:600}
+.btn:hover{border-color:var(--navy)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--line)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 14px;font-weight:600;color:var(--muted);display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{color:var(--navy);border-color:var(--accent)}
+.tab .n{font-size:.8rem;background:var(--soft);border-radius:50%;width:1.6em;height:1.6em;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.panel{display:flex;flex-direction:column;gap:14px}
+#tool{display:flex;flex-direction:column;gap:16px}
+.lead{max-width:68ch;color:var(--muted)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:820px){.split{grid-template-columns:minmax(0,1fr)}}
+.sticky{position:sticky;top:12px}
+@media (max-width:820px){.sticky{position:static}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.tag{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.lbl{font-size:.85rem;font-weight:600}
+input.txt,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:100%;max-width:100%}
+textarea{min-height:150px;resize:vertical}
+.ev textarea{min-height:70px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fields .wide{grid-column:1 / -1}
+@media (max-width:620px){.fields{grid-template-columns:1fr}}
+.dom{display:flex;flex-direction:column;gap:10px}
+.dom>h3{display:flex;align-items:center;gap:8px;font-size:1.1rem}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
+.factor{display:flex;flex-direction:column;gap:6px}
+.val{font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);padding:0}
+input[type=range].unr{opacity:.55}
+.ticks{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted)}
+.ev{display:flex;flex-direction:column;gap:10px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend{font-size:.85rem;font-weight:600;padding:0;margin-bottom:6px}
+.tog{display:flex;flex-wrap:wrap;gap:6px}
+.tog button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.88rem;text-align:left}
+.tog button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:var(--accent-ink)}
+.pair{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+@media (max-width:620px){.pair{grid-template-columns:1fr}}
+.pair>div{padding:10px 12px;min-width:0}
+.pair .b{background:var(--b-bg)}
+.pair .s{background:var(--s-bg)}
+.pair .tag{display:block;margin-bottom:2px}
+.qb{display:inline-block;font-size:.78rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line)}
+.note{border-left:4px solid var(--warn);background:var(--soft);padding:10px 12px;border-radius:0 6px 6px 0;font-size:.94rem}
+.note.ok{border-color:var(--good)}
+.meter{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--good)}
+.meter.warn i{background:var(--warn)}
+.aud{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.aud-st{font-size:.85rem;color:var(--muted)}
+.intro{display:flex;flex-direction:column;gap:10px;border-left:4px solid var(--navy)}
+.tip{display:flex;flex-direction:column;gap:6px}
+details{font-size:.92rem}
+details summary{cursor:pointer;color:var(--muted)}
+details p{margin-top:8px;max-width:68ch}
+details h4{margin:14px 0 0;font-family:var(--f-display);font-size:.95rem}
+.trbox{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:4px 12px 10px;background:var(--bg);margin-top:8px}
+.summary{border-left:4px solid var(--gold);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.summary textarea{min-height:130px}
+.sumout{width:100%;display:flex;flex-direction:column;gap:8px}
+.gate{display:flex;flex-direction:column;gap:10px;align-items:flex-start;border-left:4px solid var(--gold)}
+.gate.done{border-left-color:var(--navy)}
+.gate .gmsg{color:var(--good);font-weight:600}
+.gate .gbtns{display:flex;gap:8px;flex-wrap:wrap}
+svg.radar{width:100%;height:auto;max-width:360px;display:block;margin:0 auto}
+svg.radar text{fill:var(--ink);font:600 11px var(--f-body)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82rem;color:var(--muted);justify-content:center;margin-top:6px}
+.legend span{display:flex;align-items:center}
+.legend .dot{margin-right:6px;width:10px;height:10px}
+.scores{display:grid;gap:10px;margin-top:12px}
+.score{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.92rem}
+.bar{height:8px;background:var(--soft);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%}
+.cur{position:fixed;left:0;top:0;z-index:100;pointer-events:none;width:26px;height:26px;transition:transform .9s cubic-bezier(.4,0,.2,1);will-change:transform}
+.cur svg{width:26px;height:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.cur::after{content:"";position:absolute;left:-12px;top:-13px;width:30px;height:30px;border-radius:50%;border:3px solid var(--accent);opacity:0}
+.cur.click::after{animation:rip .45s ease-out}
+@keyframes rip{0%{opacity:.95;transform:scale(.4)}100%{opacity:0;transform:scale(1.5)}}
+.shield{position:fixed;inset:0;z-index:90;background:transparent}
+.dbar{position:fixed;left:0;right:0;bottom:0;z-index:95;background:var(--surface);border-top:2px solid var(--navy);box-shadow:0 -6px 20px rgba(0,0,0,.14);padding-top:10px;padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.dbar .in{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dline{font-size:1.05rem;min-height:2.9em;max-height:7.5em;overflow:auto}
+@media (prefers-reduced-motion:reduce){.cur{transition-duration:0ms!important}}
+</style>
 
+<div class="wrap">
+  <header>
+    <div class="hl">
+      <p class="eyebrow">HPS 529 · Sustainability assignment</p>
+      <h1>Sustainability Readiness Check</h1>
+      <p class="lead">Check how well your own public health intervention project can keep delivering benefits to your community after outside support ends, and start building the pieces of your sustainability narrative.</p>
+    </div>
+    <div class="hbtns">
+      <button class="btn" id="clearBtn">Start over</button>
+    </div>
+  </header>
+
+  <div class="card intro">
+    <div class="aud"><button class="btn" data-aud="intro" aria-pressed="false">▶ Listen to the intro</button><span class="aud-st"></span></div>
+    <details><summary>Transcript</summary><p>Welcome. In this assignment you write a short narrative describing the approach you will build into your public health intervention project so that the project, and its benefits to your community, continue over the long term. You also describe the challenges you might face, and your strategies for overcoming them, and you support your plan with at least two credible sources from outside the required readings. This tool helps with part of that work. In step one, you describe your project and rate it on nine sustainability factors from the lecture, grouped into project design, the organization, and the community. In step two, you turn your weakest factors into challenges and write your own strategies. In step three, you record your outside sources and check how credible they are. In step four, you build an outline, draft your narrative, and watch the word count against the four hundred to five hundred word target. The tool does not write the narrative for you, and it does not cover everything in the assignment, so use it as a starting point. You can pause any audio on this page and resume where you left off.</p></details>
+  </div>
+
+  <div class="card gate" id="demoCard">
+    <h2 id="gateTitle">Watch the demo to unlock the tool</h2>
+    <p id="gateText" class="muted">A narrated walkthrough of about three minutes shows exactly what to click. You can pause it, but you need to watch it to the end before you start.</p>
+    <p class="gmsg" id="gateMsg" role="status" aria-live="polite"></p>
+    <div class="gbtns">
+      <button class="btn primary" id="demoStart">▶ Start the demo</button>
+      <button class="btn" id="altUnlock">Can't use audio? Unlock by reading the transcript</button>
+    </div>
+    <details style="width:100%" id="trDet"><summary>Demo transcript</summary><div id="demoTranscript" class="trbox" tabindex="0"></div></details>
+  </div>
+
+  <div id="tool" hidden>
+    <div class="tabs" role="tablist" aria-label="Steps">
+      <button class="tab" role="tab" id="t1" data-step="1" aria-selected="true"><span class="n">1</span>Describe &amp; rate</button>
+      <button class="tab" role="tab" id="t2" data-step="2" aria-selected="false"><span class="n">2</span>Challenges &amp; strategies</button>
+      <button class="tab" role="tab" id="t3" data-step="3" aria-selected="false"><span class="n">3</span>Add sources</button>
+      <button class="tab" role="tab" id="t4" data-step="4" aria-selected="false"><span class="n">4</span>Draft</button>
+    </div>
+
+    <section class="panel" id="s1" role="tabpanel" aria-labelledby="t1">
+      <p class="lead"><b>Describe and rate.</b> Describe your intervention project, then rate each sustainability factor for your project as it is planned today. You can rate only some factors and come back to the rest.</p>
+      <div class="tip"><div class="aud"><button class="btn" data-aud="t1" aria-pressed="false">▶ Hear tip</button><span class="aud-st"></span></div><details><summary>Transcript</summary><p>Step one tip. Start by describing your project in your own words: its name, the community it serves, and what it does. Then rate each factor from one to five for your project as it is planned today, not as you hope it will be. A one means the factor is not in place at all, and a five means it is strong. Read the question under each factor and rate honestly, because your low ratings are what make the next steps useful. The factors fall into three areas from the lecture: project design and implementation, the organization that hosts the project, and the wider community. The chart on the right fills in as you rate, and the scores below it show how strong each area is. If you are unsure about a factor, leave it unrated and come back later. You can use the rest of the tool with only some factors rated.</p></details></div>
+      <div class="split">
+        <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+          <div class="card fields">
+            <div class="fld wide"><label class="lbl" for="pname">Project name</label><input class="txt" id="pname" type="text" maxlength="120" placeholder="Name of your intervention project"></div>
+            <div class="fld"><label class="lbl" for="ppop">Target community or population</label><input class="txt" id="ppop" type="text" maxlength="120" placeholder="Who the project serves"></div>
+            <div class="fld"><label class="lbl" for="pdesc">What the project does, in one line</label><input class="txt" id="pdesc" type="text" maxlength="200" placeholder="One sentence"></div>
+          </div>
+          <div id="factors" style="display:flex;flex-direction:column;gap:18px"></div>
+        </div>
+        <aside class="card sticky" aria-live="polite">
+          <h3 style="margin-bottom:8px">Your sustainability profile</h3>
+          <svg class="radar" id="radar" viewBox="-45 -15 390 330" role="img" aria-label="Radar chart of your factor ratings"></svg>
+          <div class="legend">
+            <span><i class="dot" style="background:var(--d1)"></i>Project design</span>
+            <span><i class="dot" style="background:var(--d2)"></i>Organization</span>
+            <span><i class="dot" style="background:var(--d3)"></i>Community</span>
+          </div>
+          <div class="scores" id="scores"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel" id="s2" role="tabpanel" aria-labelledby="t2" hidden>
+      <p class="lead"><b>Challenges and strategies.</b> Factors you rated 2 or lower appear here as challenges. Write your own strategy for each one in terms of your project.</p>
+      <div class="tip"><div class="aud"><button class="btn" data-aud="t2" aria-pressed="false">▶ Hear tip</button><span class="aud-st"></span></div><details><summary>Transcript</summary><p>Step two tip. Each card is a factor you rated two or lower. The left side describes the challenge in general terms, and the right side gives a hint from the lecture about how projects overcome it. Use the hint as a starting point only. In the box below, write your own strategy for your own project. Good strategies are specific: they say who will do what, and by when, and they fit your community. For example, instead of writing that you will find more funding, say which local organization could take over which cost, and in which year. If none of your factors are rated two or lower, the tool shows your two lowest ratings instead, because even a strong project has a weakest point. Strategies you write here will carry into your outline in step four.</p></details></div>
+      <div id="chList" style="display:flex;flex-direction:column;gap:12px"></div>
+    </section>
+
+    <section class="panel" id="s3" role="tabpanel" aria-labelledby="t3" hidden>
+      <p class="lead"><b>Add sources.</b> The assignment asks for at least two credible sources outside the required readings, based on similar projects. Record them here and check their credibility.</p>
+      <div class="tip"><div class="aud"><button class="btn" data-aud="t3" aria-pressed="false">▶ Hear tip</button><span class="aud-st"></span></div><details><summary>Transcript</summary><p>Step three tip. The assignment asks for at least two credible sources beyond the required readings, and suggests two to three references. Look for sources about similar projects: a successful example, a project that struggled and what its authors suggest, or general advice on making projects sustainable. Good places to search are PubMed, Google Scholar, and the publications of the World Health Organization and national public health agencies. For each source, paste the citation in A P A style, choose the type of source, and tick only the credibility checks that are honestly true. Then write what the source shows about a similar project, and choose the factor it supports. If you cannot tick most of the checks, look for a stronger source. You can record up to three sources.</p></details></div>
+      <div id="srcList" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div class="row"><button class="btn" id="addSrc">Add a source</button><div style="flex:1;min-width:200px"><span class="small muted" id="srcCount"></span><div class="meter" id="srcMeter"><i style="width:0"></i></div></div></div>
+    </section>
+
+    <section class="panel" id="s4" role="tabpanel" aria-labelledby="t4" hidden>
+      <p class="lead"><b>Draft.</b> Build an outline from your own entries, then write your narrative of about 400 to 500 words in your own words.</p>
+      <div class="tip"><div class="aud"><button class="btn" data-aud="t4" aria-pressed="false">▶ Hear tip</button><span class="aud-st"></span></div><details><summary>Transcript</summary><p>Step four tip. Press the build button to get an outline. It is a skeleton only: text in square brackets is a prompt for you to answer in your own words, and your own strategies and citations from the earlier steps are placed where they belong. The tool does not write the narrative for you. Your narrative should describe the approach you will build into your project to keep it going over the long term, describe the challenges you might face and your strategies for overcoming them, and cite your outside sources as evidence from similar projects. The word counter shows your progress toward four hundred to five hundred words. Words after a line that says References are not counted. The checks on the right show whether you have enough sources, and whether each challenge has a strategy. When you are done, copy the text, and check it once more against the assignment instructions.</p></details></div>
+      <div class="split">
+        <div class="card">
+          <div class="row"><h3>Your narrative</h3><button class="btn" id="build">Build my outline</button></div>
+          <p class="muted small" style="margin:6px 0 10px">Text in [brackets] is for you to write. Put your reference list after a line that says References.</p>
+          <textarea id="para" style="min-height:300px" aria-label="Your narrative"></textarea>
+          <div class="row" style="margin-top:8px"><span id="wc" class="muted"></span><button class="btn" id="copy">Copy text</button></div>
+          <div class="meter" id="meter"><i style="width:0"></i></div>
+        </div>
+        <aside class="card sticky" id="checks" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="card summary" id="sumCard">
+      <h2>Reflections on the tool</h2>
+      <p class="muted" id="sumIntro">When you're done, create a starter for your reflection on using the tool. It summarizes what you did and how, then adds prompts for your own thoughts. Copy it into your post. Nothing is saved or sent.</p>
+      <button class="btn primary" id="sumBtn">Create my reflection starter</button>
+      <div class="sumout" id="sumOut" hidden>
+        <textarea id="sumText" aria-label="Reflections on the tool"></textarea>
+        <div class="row"><span class="muted small">Bracketed parts are for you to complete.</span><button class="btn" id="sumCopy">Copy text</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="shield" id="shield" hidden></div>
+<div class="cur" id="cur" hidden aria-hidden="true"><svg viewBox="0 0 26 26"><path d="M3 2l17 8-7 2.4-3.2 7.2z" fill="#ffffff" stroke="#111111" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+<div class="dbar" id="dbar" hidden role="region" aria-label="Demo narration">
+  <div class="in">
+    <div class="row"><span class="tag" id="dstep">Demo</span><div class="hbtns"><button class="btn" id="dPause">❚❚ Pause</button><button class="btn" id="dClose" hidden>Close demo</button></div></div>
+    <p class="dline" id="dline" aria-live="polite"></p>
+    <div class="meter"><i id="dprog" style="width:0"></i></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const list=a=>a.length<3?a.join(' and '):a.slice(0,-1).join(', ')+', and '+a[a.length-1];
+window.addEventListener('unhandledrejection',e=>{if(e.reason==='abort')e.preventDefault();});
+
+/* ---------- Content ---------- */
+const DOM=[
+  {n:'Project design and implementation',s:'Project design',c:'--d1'},
+  {n:'Organizational setting',s:'Organization',c:'--d2'},
+  {n:'Broader community environment',s:'Community',c:'--d3'}
+];
+const FACTORS=[
+  {d:0,k:'Negotiation',q:'Project negotiation',h:'Are goals agreed with community members as equal partners, not set by donors alone?',b:'Goals are driven by donors or outside experts rather than by the community.',s:'Negotiate the design through a respectful process of give and take with community partners.'},
+  {d:0,k:'Effectiveness',q:'Effectiveness and visibility',h:'Is the project effective, and can people see it working?',b:'Results are not visible, or effectiveness has not been shown.',s:'Define clear goals and objectives, and share results so that benefits are seen.'},
+  {d:0,k:'Financing',q:'Financing',h:'Can local resources cover recurrent costs after outside funding ends?',b:'The project depends on a single outside funder, with no plan for cost recovery.',s:'Gain funding from local and national sources during the project, and plan a gradual move toward financial self-sufficiency.'},
+  {d:0,k:'Training',q:'Training and capacity building',h:'Are community members and staff trained to carry the work on?',b:'Skills and knowledge stay with the outside team.',s:'Include a strong training component so that local people hold the knowledge and skills.'},
+  {d:1,k:'Institution',q:'Institutional strength',h:'Is the host organization stable and resourceful enough to carry the program?',b:'The host organization is new, unstable, or thinly resourced.',s:'Choose a mature host partner, or build the host organization’s capacity during the project.'},
+  {d:1,k:'Integration',q:'Integration with existing services',h:'Does the work fit the host organization’s regular activities and mission?',b:'The project runs separately from regular activities and structures.',s:'Integrate activities fully into established administrative and service structures.'},
+  {d:1,k:'Champion',q:'Program champion',h:'Does someone with influence advocate for continuing the project?',b:'No local advocate would carry the project forward if the lead leaves.',s:'Identify and nurture a champion, and secure endorsement from leadership.'},
+  {d:2,k:'Environment',q:'Socioeconomic and political climate',h:'Is the setting favorable for keeping the program going?',b:'The political or economic climate is unfavorable or unstable.',s:'Build support among local leaders, and adapt the program as needs and circumstances change.'},
+  {d:2,k:'Participation',q:'Community participation',h:'How deep and how wide is community involvement?',b:'The community is a recipient of services, not a partner.',s:'Promote full participation by beneficiaries across planning, delivery, and review.'}
+];
+const FBYK={};FACTORS.forEach(f=>FBYK[f.k]=f);
+const STYPES=['Peer-reviewed journal article','Government or international agency report (for example WHO or a public health agency)','University or research institute report','NGO or foundation evaluation','Other'];
+const SCHK=[['out','It is not one of the required readings'],['who','The author or publisher is named and has expertise in the topic'],['pub','It comes from a journal, agency, university, or established organization'],['real','It is based on real projects, data, or a review of evidence'],['recent','It is recent enough to still apply, or is a well-established reference']];
+
+/* ---------- State ---------- */
+const newSrc=id=>({id,cite:'',type:'',chk:{},shows:'',factor:''});
+const blank=()=>({step:1,name:'',pop:'',desc:'',vals:{},strat:{},sources:[newSrc(1)],nextSrc:2,para:null,edited:false,focus:null});
+let state=blank();
+const src=id=>state.sources.find(s=>s.id===id);
+const ratedList=()=>FACTORS.filter(f=>state.vals[f.k]);
+const domAvg=di=>{const r=FACTORS.filter(f=>f.d===di&&state.vals[f.k]);return r.length?r.reduce((a,f)=>a+state.vals[f.k],0)/r.length:null;};
+const nameOr=(d)=>state.name.trim()||d;
+function challenges(){
+  const r=ratedList().sort((a,b)=>state.vals[a.k]-state.vals[b.k]);
+  const low=r.filter(f=>state.vals[f.k]<=2);
+  if(low.length)return{items:low,fallback:false};
+  return{items:r.slice(0,2),fallback:r.length>0};
+}
+const srcCount=()=>state.sources.filter(s=>s.cite.trim().length>10).length;
+
+/* ---------- Step 1 ---------- */
+function renderStep1(){
+  $('#pname').value=state.name;$('#ppop').value=state.pop;$('#pdesc').value=state.desc;
+  let h='';
+  DOM.forEach((d,di)=>{
+    h+=`<div class="dom"><h3><i class="dot" style="background:var(${d.c})"></i>${d.n}</h3>`;
+    FACTORS.filter(f=>f.d===di).forEach(f=>{
+      const v=state.vals[f.k];
+      h+=`<div class="card factor"><div class="row"><label for="r-${f.k}"><b>${f.q}</b></label><span class="val" id="v-${f.k}">${v?v+' of 5':'Not rated'}</span></div><p class="muted small">${f.h}</p><input type="range" min="1" max="5" step="1" value="${v||3}" id="r-${f.k}" data-k="${f.k}" class="${v?'':'unr'}" aria-valuetext="${v?v+' of 5':'Not rated'}"><div class="ticks"><span>1 Not in place</span><span>5 Strong</span></div></div>`;
+    });
+    h+='</div>';
+  });
+  $('#factors').innerHTML=h;
+  updateRadar();
+}
+function setRate(k,v){
+  state.vals[k]=v;state.para=state.edited?state.para:null;
+  const el=$('#r-'+k);if(el){el.classList.remove('unr');el.setAttribute('aria-valuetext',v+' of 5');}
+  const lab=$('#v-'+k);if(lab)lab.textContent=v+' of 5';
+  updateRadar();
+}
+function updateRadar(){
+  const n=FACTORS.length,cx=150,cy=150,R=105;let s='';
+  const pt=(i,r)=>{const a=-Math.PI/2+2*Math.PI*i/n;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  for(let g=1;g<=5;g++){
+    s+=`<polygon points="${FACTORS.map((_,i)=>pt(i,R*g/5).join(',')).join(' ')}" fill="none" stroke="var(--line)"/>`;
+    s+=`<text x="${cx+3}" y="${cy-R*g/5+10}" style="font-size:9px;font-weight:400;fill:var(--muted)">${g}</text>`;
+  }
+  const poly=[];
+  FACTORS.forEach((f,i)=>{
+    const e=pt(i,R);s+=`<line x1="${cx}" y1="${cy}" x2="${e[0]}" y2="${e[1]}" stroke="var(--line)"/>`;
+    const v=state.vals[f.k]||0;poly.push(pt(i,R*v/5).join(','));
+    const l=pt(i,R+14),anc=l[0]<cx-8?'end':(l[0]>cx+8?'start':'middle');
+    s+=`<text x="${l[0]}" y="${l[1]+4}" text-anchor="${anc}">${f.k}</text>`;
+  });
+  s+=`<polygon points="${poly.join(' ')}" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="2"/>`;
+  FACTORS.forEach((f,i)=>{const v=state.vals[f.k];if(!v)return;const p=pt(i,R*v/5);s+=`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="var(${DOM[f.d].c})" stroke="var(--surface)" stroke-width="1.5"/>`;});
+  $('#radar').innerHTML=s;
+  $('#scores').innerHTML=DOM.map((d,di)=>{
+    const a=domAvg(di),tot=FACTORS.filter(f=>f.d===di).length,r=FACTORS.filter(f=>f.d===di&&state.vals[f.k]).length;
+    return `<div class="score"><div><b>${d.s}</b> <span class="muted small">${r} of ${tot} rated</span><div class="bar"><i style="width:${a?a/5*100:0}%;background:var(${d.c})"></i></div></div><b>${a?a.toFixed(1)+' / 5':'–'}</b></div>`;
+  }).join('');
+}
+
+/* ---------- Step 2 ---------- */
+function renderStep2(){
+  const c=challenges();
+  if(!c.items.length){$('#chList').innerHTML='<div class="card muted">Rate at least one factor in step 1 first. Factors you rate 2 or lower will appear here.</div>';return;}
+  let h=c.fallback?'<div class="note">None of your rated factors is 2 or lower, so these are your two lowest ratings. Even a strong project has a weakest point.</div>':'';
+  h+=c.items.map(f=>`<div class="card ev" data-ch="${f.k}">
+    <div class="row"><h3>${f.q}</h3><span class="qb">Rated ${state.vals[f.k]} of 5</span></div>
+    <div class="pair"><div class="b"><span class="tag">Possible challenge</span>${f.b}</div><div class="s"><span class="tag">Hint from the lecture</span>${f.s}</div></div>
+    <label class="lbl" for="st-${f.k}">Your strategy for ${esc(nameOr('your project'))}</label>
+    <textarea id="st-${f.k}" data-strat="${f.k}" placeholder="Be specific: who will do what, and by when?">${esc(state.strat[f.k]||'')}</textarea>
+  </div>`).join('');
+  $('#chList').innerHTML=h;
+}
+
+/* ---------- Step 3 ---------- */
+function renderStep3(){
+  $('#srcList').innerHTML=state.sources.map((s,ix)=>`<div class="card ev" data-card="${s.id}">
+    <div class="row"><h3>Source ${ix+1}</h3>${state.sources.length>1?`<button class="btn" data-rmsrc="${s.id}" aria-label="Remove source ${ix+1}">Remove</button>`:''}</div>
+    <label class="lbl" for="cite-${s.id}">Citation (APA)</label>
+    <textarea id="cite-${s.id}" data-sid="${s.id}" data-sf="cite" placeholder="Author, A. A. (Year). Title of the work. Publisher or journal details.">${esc(s.cite)}</textarea>
+    <label class="lbl" for="type-${s.id}">Type of source</label>
+    <select id="type-${s.id}" data-sid="${s.id}" data-sf="type"><option value="">Choose one</option>${STYPES.map(t=>`<option${s.type===t?' selected':''}>${esc(t)}</option>`).join('')}</select>
+    <fieldset><legend>Credibility check: tick only what is true</legend><div class="tog">${SCHK.map(([k,l])=>`<button type="button" data-chk="${k}" data-sid="${s.id}" aria-pressed="${!!s.chk[k]}">${l}</button>`).join('')}</div></fieldset>
+    <label class="lbl" for="shows-${s.id}">What it shows about a similar project</label>
+    <textarea id="shows-${s.id}" data-sid="${s.id}" data-sf="shows" placeholder="A success, a limitation, or advice for improvement, in one or two lines">${esc(s.shows)}</textarea>
+    <label class="lbl" for="fac-${s.id}">Factor it supports</label>
+    <select id="fac-${s.id}" data-sid="${s.id}" data-sf="factor"><option value="">Choose one</option>${FACTORS.map(f=>`<option value="${f.k}"${s.factor===f.k?' selected':''}>${f.q}</option>`).join('')}</select>
+  </div>`).join('');
+  $('#addSrc').hidden=state.sources.length>=3;
+  updSrc();
+  if(state.focus){const el=$(state.focus);if(el)el.focus({preventScroll:true});state.focus=null;}
+}
+function updSrc(){
+  const n=srcCount();
+  $('#srcCount').textContent=`${n} source${n===1?'':'s'} recorded. The assignment asks for at least 2, and 2 to 3 references.`;
+  const m=$('#srcMeter');m.classList.toggle('warn',n<2);m.firstElementChild.style.width=Math.min(100,n/2*100)+'%';
+}
+
+/* ---------- Step 4 ---------- */
+function bodyText(t){return t.split(/\n\s*references\s*(?:\n|$)/i)[0];}
+function wordCount(t){const m=bodyText(t).trim().match(/\S+/g);return m?m.length:0;}
+function buildOutline(){
+  const nm=nameOr('[your project]'),pop=state.pop.trim()||'[your target community]';
+  const ch=challenges().items.filter(f=>state.strat[f.k]&&state.strat[f.k].trim());
+  const all=challenges().items;
+  let s=`[Approach to continuity: In 4 to 5 sentences, explain how ${nm} will keep delivering benefits to ${pop} after outside support ends. Think about who will own it, how it will be funded, and who will carry it out.]\n\n`;
+  s+='Challenges and strategies\n';
+  if(all.length){all.forEach(f=>{s+=`${f.q}: [describe this challenge in your project's terms]. Strategy: ${state.strat[f.k]&&state.strat[f.k].trim()?state.strat[f.k].trim():'[your strategy]'}\n`;});}
+  else s+='[Rate factors in step 1 to see your challenges here.]\n';
+  s+='\n[Evidence from similar projects: What do your outside sources show about what worked, what did not, and what to improve? Cite each one, for example (Author, year).]\n\n';
+  s+='[Closing: In 1 to 2 sentences, say how you will know the benefits are continuing.]\n\nReferences\n';
+  const cites=state.sources.filter(x=>x.cite.trim()).map(x=>x.cite.trim());
+  s+=cites.length?cites.join('\n'):'[Add your sources in step 3]';
+  return s;
+}
+function updateWC(){
+  const n=wordCount($('#para').value),ok=n>=400&&n<=500;
+  $('#wc').textContent=`${n} words (target 400 to 500, references not counted)`;
+  const m=$('#meter');m.classList.toggle('warn',!ok);m.firstElementChild.style.width=Math.min(100,n/500*100)+'%';
+  renderChecks(n);
+}
+function renderChecks(n){
+  if(n==null)n=wordCount($('#para').value);
+  const sc=srcCount(),ch=challenges().items,done=ch.filter(f=>state.strat[f.k]&&state.strat[f.k].trim()).length,r=ratedList().length;
+  const note=(ok,t)=>`<div class="note${ok?' ok':''}">${t}</div>`;
+  $('#checks').innerHTML='<h3 style="margin-bottom:10px">Checks against the assignment</h3><div style="display:flex;flex-direction:column;gap:10px">'+
+    note(n>=400&&n<=500,n<400?`${n} words. The suggested length is 400 to 500.`:n>500?`${n} words. The suggested length is 400 to 500, so consider trimming.`:`${n} words. Within the suggested 400 to 500.`)+
+    note(sc>=2&&sc<=3,sc<2?`${sc} source${sc===1?'':'s'} recorded. The assignment asks for at least 2 outside the required readings.`:sc>3?`${sc} sources recorded. The assignment suggests 2 to 3 references.`:`${sc} sources recorded.`)+
+    note(ch.length>0&&done===ch.length,ch.length?`Strategies written for ${done} of ${ch.length} challenges.`:'No challenges yet. Rate factors in step 1.')+
+    note(r===FACTORS.length,`${r} of ${FACTORS.length} factors rated.`)+
+    '<p class="muted small">These checks are a guide. Read the full assignment instructions before you submit.</p></div>';
+}
+function renderStep4(){
+  if(state.para===null)state.para='';
+  $('#para').value=state.para;updateWC();
+}
+
+/* ---------- Navigation ---------- */
+function goto(n){
+  if(window.__stopAud)window.__stopAud();
+  state.step=n;
+  [1,2,3,4].forEach(k=>{$('#s'+k).hidden=k!==n;$('#t'+k).setAttribute('aria-selected',k===n);});
+  if(n===1)renderStep1();if(n===2)renderStep2();if(n===3)renderStep3();if(n===4)renderStep4();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('keydown',e=>{
+  if(dm.on&&!e.target.closest('#dbar')&&['Enter',' ','Tab'].includes(e.key)){e.preventDefault();e.stopPropagation();}
+},true);
+document.addEventListener('click',e=>{
+  const t=e.target;
+  const tab=t.closest('[data-step]');if(tab){goto(+tab.dataset.step);return;}
+  const chk=t.closest('[data-chk]');if(chk){const s=src(+chk.dataset.sid);s.chk[chk.dataset.chk]=!s.chk[chk.dataset.chk];state.focus=`[data-chk="${chk.dataset.chk}"][data-sid="${s.id}"]`;renderStep3();return;}
+  const rm=t.closest('[data-rmsrc]');if(rm){state.sources=state.sources.filter(s=>s.id!==+rm.dataset.rmsrc);renderStep3();return;}
+});
+$('#addSrc').addEventListener('click',()=>{if(state.sources.length>=3)return;const s=newSrc(state.nextSrc++);state.sources.push(s);state.focus='#cite-'+s.id;renderStep3();});
+function onField(e){
+  const t=e.target;
+  if(t.id==='pname'){state.name=t.value;return;}
+  if(t.id==='ppop'){state.pop=t.value;return;}
+  if(t.id==='pdesc'){state.desc=t.value;return;}
+  if(t.matches&&t.matches('input[type=range][data-k]')){setRate(t.dataset.k,+t.value);return;}
+  if(t.dataset&&t.dataset.strat){state.strat[t.dataset.strat]=t.value;return;}
+  if(t.dataset&&t.dataset.sf){src(+t.dataset.sid)[t.dataset.sf]=t.value;updSrc();return;}
+  if(t.id==='para'){state.para=t.value;state.edited=t.value.trim().length>0;updateWC();}
+}
+document.addEventListener('input',onField);
+document.addEventListener('change',e=>{if(e.target.tagName==='SELECT')onField(e);});
+document.addEventListener('pointerdown',e=>{const r=e.target.closest&&e.target.closest('input[type=range][data-k]');if(r&&!state.vals[r.dataset.k])setRate(r.dataset.k,+r.value);});
+document.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest('input[type=range][data-k]');if(r&&!state.vals[r.dataset.k]&&e.key.startsWith('Arrow'))setRate(r.dataset.k,+r.value);});
+let buildArm=null;
+$('#build').addEventListener('click',()=>{
+  const b=$('#build');
+  if(state.edited&&!buildArm){b.textContent='Click again to replace your draft';buildArm=setTimeout(()=>{buildArm=null;b.textContent='Build my outline';},4000);return;}
+  if(buildArm){clearTimeout(buildArm);buildArm=null;}
+  b.textContent='Build my outline';
+  state.para=buildOutline();state.edited=false;$('#para').value=state.para;updateWC();
+});
+function copyFrom(ta,btn,label){
+  const done=()=>{btn.textContent='Copied';setTimeout(()=>btn.textContent=label,1500);};
+  try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();});}catch(_){ta.select();}
+}
+$('#copy').addEventListener('click',()=>copyFrom($('#para'),$('#copy'),'Copy text'));
+$('#sumCopy').addEventListener('click',()=>copyFrom($('#sumText'),$('#sumCopy'),'Copy text'));
+let clearArm=null;
+$('#clearBtn').addEventListener('click',()=>{
+  const b=$('#clearBtn');
+  if(!clearArm){b.textContent='Click again to clear everything';clearArm=setTimeout(()=>{clearArm=null;b.textContent='Start over';},4000);return;}
+  clearTimeout(clearArm);clearArm=null;b.textContent='Start over';
+  state=blank();$('#sumOut').hidden=true;$('#sumText').value='';goto(1);
+});
+
+/* ---------- Audio: read-aloud using the browser's built-in voice; pause remembers the spot ---------- */
+const SS=window.speechSynthesis;
+const AP={};
+if(!SS)document.querySelectorAll('.aud').forEach(a=>{a.hidden=true;});
+const audLabel=id=>id==='intro'?'Listen to the intro':'Hear tip';
+function audText(id){const b=document.querySelector(`[data-aud="${id}"]`);return b.closest('.intro,.tip').querySelector('details p').textContent.trim();}
+function audUI(id){
+  const p=AP[id]||{state:'idle'};
+  document.querySelectorAll(`[data-aud="${id}"]`).forEach(b=>{
+    b.textContent=p.state==='playing'?'❚❚ Pause':p.state==='paused'?'▶ Resume':'▶ '+audLabel(id);
+    b.setAttribute('aria-pressed',String(p.state==='playing'));
+    const st=b.parentElement.querySelector('.aud-st');
+    if(st)st.textContent=p.state==='playing'?'Playing':p.state==='paused'?'Paused':'';
+  });
+}
+function pickVoice(){
+  if(!SS)return null;
+  const v=SS.getVoices().filter(x=>/^en(-|_|$)/i.test(x.lang));
+  return v.find(x=>/natural|online|aria|jenny|samantha|google us/i.test(x.name))||v.find(x=>/en[-_]us/i.test(x.lang))||v[0]||null;
+}
+function audSpeak(id){
+  const p=AP[id],full=audText(id);
+  const u=new SpeechSynthesisUtterance(full.slice(p.offset));
+  const v=pickVoice();if(v)u.voice=v;u.lang=v?v.lang:'en-US';u.rate=0.95;
+  p.base=p.offset;p.pos=p.offset;p.gen=(p.gen||0)+1;const g=p.gen;
+  u.onboundary=e=>{if(p.gen===g)p.pos=p.base+e.charIndex;};
+  const fin=()=>{if(p.gen===g&&p.state==='playing'){p.state='idle';p.offset=0;audUI(id);}};
+  u.onend=fin;
+  u.onerror=e=>{if(e.error!=='canceled'&&e.error!=='interrupted')fin();};
+  SS.cancel();SS.speak(u);
+}
+function audStop(id){const p=AP[id];if(!p)return;p.gen=(p.gen||0)+1;SS.cancel();p.state='idle';p.offset=0;audUI(id);}
+function audPause(id){const p=AP[id];p.gen=(p.gen||0)+1;p.offset=p.pos||p.offset||0;SS.cancel();p.state='paused';audUI(id);}
+function audPlay(id){
+  Object.keys(AP).forEach(k=>{if(k!==id&&AP[k].state==='playing')audPause(k);});
+  const p=AP[id]||(AP[id]={state:'idle',offset:0});
+  if(p.state==='idle')p.offset=0;
+  p.state='playing';audSpeak(id);audUI(id);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-aud]');if(!b||!SS)return;
+  const id=b.dataset.aud,p=AP[id];
+  if(p&&p.state==='playing')audPause(id);else audPlay(id);
+});
+window.__stopAud=()=>Object.keys(AP).forEach(k=>{if(AP[k].state!=='idle')audStop(k);});
+
+/* ---------- Reflections on the tool ---------- */
+function buildSummary(){
+  const r=ratedList();
+  if(!r.length)return 'Rate at least one factor in step 1 first, then create your reflection starter.';
+  const avs=DOM.map((d,di)=>({n:d.s.toLowerCase(),a:domAvg(di)})).filter(x=>x.a!==null).sort((a,b)=>a.a-b.a);
+  const ch=challenges().items,done=ch.filter(f=>state.strat[f.k]&&state.strat[f.k].trim()).length,sc=srcCount();
+  let s=`I used the Sustainability Readiness Check for ${nameOr('[my project]')}. I rated ${r.length} of ${FACTORS.length} sustainability factors from the lecture, covering project design, the organization, and the community. `;
+  if(avs.length>1)s+=`My weakest area was ${avs[0].n} (${avs[0].a.toFixed(1)} of 5) and my strongest was ${avs[avs.length-1].n} (${avs[avs.length-1].a.toFixed(1)} of 5). `;
+  s+=`I identified ${ch.length} challenge${ch.length===1?'':'s'} (${list(ch.map(f=>f.q.toLowerCase()))}) and wrote my own strategies for ${done}. `;
+  s+=`I recorded ${sc} outside source${sc===1?'':'s'} and checked ${sc===1?'it':'each'} against a credibility checklist. `;
+  const n=wordCount($('#para').value);
+  s+=n?`My draft narrative is about ${n} words. `:'I have not drafted my narrative in the tool yet. ';
+  return s+'[What was easy or hard about using the tool?] [What would you change or add?]';
+}
+$('#sumBtn').addEventListener('click',()=>{$('#sumText').value=buildSummary();$('#sumOut').hidden=false;});
+
+/* ---------- Narrated demo (paced by the narration; pause freezes both voice and cursor) ---------- */
+const SAMPLE={name:'Community health worker program for diabetes prevention',pop:'Adults in a rural county',desc:'Trained community health workers lead monthly lifestyle sessions and home visits.',
+  vals:{Negotiation:4,Effectiveness:3,Financing:1,Training:2,Institution:3,Integration:2,Champion:4,Environment:3,Participation:5},
+  strat:{Financing:'Ask the county health department to take over salary costs in year two, and bill insurers for covered services by year three.',Training:'Train two local volunteers each year as peer leaders, so the skills stay in the community.',Integration:'Move scheduling and records into the partner clinic’s regular diabetes care routine.'},
+  cite:'Author, A. A. (Year). Title of a study of a similar community program. Journal Name, volume(issue), pages.',
+  type:STYPES[0],shows:'The program kept going when a local agency took over funding and staff were trained locally.',factor:'Financing',
+  cite2:'Organization Name. (Year). Title of a report on sustaining community programs. Publisher.',type2:STYPES[1],shows2:'Gives general advice on planning for local ownership from the start.',factor2:'Integration'};
+const dm={on:false,paused:false,id:0,gen:0,pend:null,pos:0,replay:false,spd:window.__DEMO_SPEED||1,snap:null,group:''};
+const cur=$('#cur');
+let cx=0,cy=0;
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function W(ms){
+  const id=dm.id;let left=ms*dm.spd;
+  return new Promise((res,rej)=>{
+    const t=()=>{
+      if(dm.id!==id)return rej('abort');
+      if(!dm.paused)left-=50;
+      if(left<=0)res();else setTimeout(t,50);
+    };
+    t();
+  });
+}
+function setCur(x,y,dur){
+  cx=x;cy=y;
+  cur.style.transitionDuration=(dur*dm.spd)+'ms';
+  cur.style.transform=`translate(${x}px,${y}px)`;
+}
+async function mv(el,o={}){
+  if(!el)return;
+  let r=el.getBoundingClientRect();
+  if(!o.fixed&&(r.top<90||r.bottom>innerHeight-200)){
+    el.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+    await W(800);r=el.getBoundingClientRect();
+  }
+  const dur=o.dur||900;
+  setCur(r.left+r.width*(o.fx==null?.5:o.fx),r.top+r.height*(o.fy==null?.5:o.fy),dur);
+  await W(dur+80);
+}
+async function clk(el){
+  cur.classList.add('click');await W(160);
+  if(el){if(el.focus)el.focus({preventScroll:true});el.click();}
+  await W(300);cur.classList.remove('click');
+}
+async function typ(el,text,cps){
+  el.focus({preventScroll:true});el.value='';
+  for(const ch of text){el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await W(1000/(cps||30));}
+}
+async function rate(k,v){
+  const el=$('#r-'+k);
+  await mv(el,{dur:800,fx:(v-1)/4*.9+.05});
+  await clk(null);
+  el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));await W(250);
+}
+async function pick(sel,val){
+  const el=typeof sel==='string'?$(sel):sel;
+  await mv(el,{dur:800});await clk(el);
+  el.value=val;el.dispatchEvent(new Event('change',{bubbles:true}));await W(250);
+}
+async function chkTick(sid,k){const b=document.querySelector(`[data-chk="${k}"][data-sid="${sid}"]`);await mv(b,{dur:600});await clk(b);}
+async function stratFill(k,text,typed){
+  const ta=$('#st-'+k);await mv(ta,{dur:800});await clk(ta);
+  if(typed)await typ(ta,text,55);else{ta.value=text;ta.dispatchEvent(new Event('input',{bubbles:true}));await W(500);}
+}
+const T=s=>$(s);
+const DEMO=[
+ {g:'Overview',t:'This demo shows how to use the tool, in about three minutes. It uses a sample project, and the tool resets when the demo ends.',a:async()=>{await mv($('h1'),{dur:1000});}},
+ {t:'You can pause the demo at any time, using this button.',a:async()=>{await mv($('#dPause'),{dur:1000,fixed:true});}},
+ {t:'There are four steps, shown in these tabs: describe and rate, challenges and strategies, add sources, and draft.',a:async()=>{await mv($('#t1'),{dur:900});await mv($('#t2'),{dur:800});await mv($('#t3'),{dur:700});await mv($('#t4'),{dur:700});await mv($('#t1'),{dur:800});}},
+ {g:'Step 1: describe and rate',t:'Start by describing your own intervention project. Click in this box and type its name.',a:async()=>{const e=$('#pname');await mv(e,{dur:1000});await clk(e);await typ(e,SAMPLE.name,30);}},
+ {t:'Then add the community your project serves, and one line about what it does.',a:async()=>{let e=$('#ppop');await mv(e,{dur:800});await clk(e);await typ(e,SAMPLE.pop,30);e=$('#pdesc');await mv(e,{dur:700});await clk(e);await typ(e,SAMPLE.desc,40);}},
+ {t:'Now rate each sustainability factor, from one, not in place, to five, strong. The factors come from the lecture, and they are grouped into three areas: project design, the organization, and the community.',a:async()=>{await mv(document.querySelector('.dom h3'),{dur:1000});}},
+ {t:'Read the question under each factor, then click along the slider. I will rate the project design factors: negotiation, effectiveness, financing, and training.',a:async()=>{for(const k of ['Negotiation','Effectiveness','Financing','Training'])await rate(k,SAMPLE.vals[k]);}},
+ {t:'Financing is rated one, because this sample project depends on a single outside grant. Rate honestly. Low ratings are useful, because they show where you need a plan.',a:async()=>{await mv($('#r-Financing'),{dur:900,fx:.05});await W(1500);}},
+ {t:'Next, the organization: institutional strength, integration with existing services, and whether the project has a champion.',a:async()=>{for(const k of ['Institution','Integration','Champion'])await rate(k,SAMPLE.vals[k]);}},
+ {t:'Then the community: the political and economic climate, and how much the community takes part.',a:async()=>{for(const k of ['Environment','Participation'])await rate(k,SAMPLE.vals[k]);}},
+ {t:'As you rate, the chart on the right fills in. Each point is a factor. The further from the center, the stronger the factor.',a:async()=>{await mv($('#radar'),{dur:1100});}},
+ {t:'Below the chart, the scores show how strong each of the three areas is. You can rate only some factors and come back to the rest.',a:async()=>{await mv($('#scores'),{dur:1000});}},
+ {g:'Step 2: challenges and strategies',t:'That finishes step one. Click the Challenges and strategies tab.',a:async()=>{await mv($('#t2'),{dur:1000,fixed:true});await clk($('#t2'));await W(300);}},
+ {t:'Every factor you rated two or lower appears as a challenge. Each card gives a hint from the lecture about how projects overcome it.',a:async()=>{await mv(document.querySelector('[data-ch="Financing"] .pair'),{dur:1100});}},
+ {t:'Write your own strategy in the box, in terms of your project. I will type one for financing.',a:async()=>{await stratFill('Financing',SAMPLE.strat.Financing,true);}},
+ {t:'Good strategies are specific: they say who will do what, and by when. The other challenges work the same way.',a:async()=>{await stratFill('Training',SAMPLE.strat.Training,false);await stratFill('Integration',SAMPLE.strat.Integration,false);}},
+ {g:'Step 3: add sources',t:'Now click the Add sources tab.',a:async()=>{await mv($('#t3'),{dur:1000,fixed:true});await clk($('#t3'));await W(300);}},
+ {t:'The assignment asks for at least two credible sources outside the required readings, based on similar projects. Look for successful examples, limitations, or general advice on making projects sustainable.',a:async()=>{await mv(document.querySelector('#s3 .lead'),{dur:1000});}},
+ {t:'Paste the citation in A P A style, and choose the type of source.',a:async()=>{const c=$('#cite-1');await mv(c,{dur:900});await clk(c);c.value=SAMPLE.cite;c.dispatchEvent(new Event('input',{bubbles:true}));await W(500);await pick('#type-1',SAMPLE.type);}},
+ {t:'Then do the credibility check. Tick only what is honestly true: that it is not a required reading, that the author is named and has expertise, that a journal, agency or university published it, that it rests on real projects or data, and that it is recent enough.',a:async()=>{for(const k of ['out','who','pub','real','recent'])await chkTick(1,k);}},
+ {t:'Write what the source shows about a similar project, and choose the factor it supports.',a:async()=>{const s=$('#shows-1');await mv(s,{dur:900});await clk(s);await typ(s,SAMPLE.shows,55);await pick('#fac-1',SAMPLE.factor);}},
+ {t:'Add a second source with this button. The assignment asks for two or three. I will fill in the second one quickly.',a:async()=>{const b=$('#addSrc');await mv(b,{dur:900});await clk(b);
+    const c=$('#cite-2');await mv(c,{dur:800});c.value=SAMPLE.cite2;c.dispatchEvent(new Event('input',{bubbles:true}));
+    await pick('#type-2',SAMPLE.type2);
+    const s=$('#shows-2');s.value=SAMPLE.shows2;s.dispatchEvent(new Event('input',{bubbles:true}));
+    await pick('#fac-2',SAMPLE.factor2);
+    for(const k of ['out','who','pub','real'])await chkTick(2,k);}},
+ {g:'Step 4: draft',t:'Finally, click the Draft tab.',a:async()=>{await mv($('#t4'),{dur:1000,fixed:true});await clk($('#t4'));await W(300);}},
+ {t:'The checks on the right compare your work with the assignment: your word count, your number of sources, and whether each challenge has a strategy.',a:async()=>{await mv($('#checks'),{dur:1100});}},
+ {t:'Press Build my outline to get a skeleton. Square brackets are prompts for you to answer in your own words, and your own strategies and citations are already in place. The tool does not write the narrative for you.',a:async()=>{const b=$('#build');await mv(b,{dur:1000});await clk(b);await mv($('#para'),{dur:1100,fy:.25});}},
+ {t:'Write your narrative in the box. The counter shows your progress toward four hundred to five hundred words, and references are not counted. When you are ready, copy the text.',a:async()=>{await mv($('#wc'),{dur:900});await mv($('#copy'),{dur:800});}},
+ {g:'Wrap-up',t:'Last, the reflections card. Create a reflection starter, add your thoughts at the brackets, and copy it into your post.',a:async()=>{const b=$('#sumBtn');await mv(b,{dur:1100});await clk(b);await mv($('#sumText'),{dur:1000,fy:.3});}},
+ {t:'Nothing is saved or sent, so copy your work before closing. When this demo ends, the tool resets, so you can start with your own project. The hear tip buttons give audio help on each step.',a:async()=>{await mv($('#sumIntro'),{dur:1000});}}
+];
+(function(){
+  let h='',open=false;
+  DEMO.forEach(s=>{if(s.g){if(open)h+='</p>';h+=`<h4>${esc(s.g)}</h4><p>`;open=true;}h+=esc(s.t)+' ';});
+  $('#demoTranscript').innerHTML=h+'</p>';
+})();
+
+function utter(text,id){
+  return new Promise(res=>{
+    if(!SS){
+      let left=Math.max(1200,text.split(/\s+/).length*380)*dm.spd;dm.pos=0;dm.pend=res;
+      const t=()=>{if(dm.id!==id||dm.pend!==res)return;left-=50;if(left<=0){dm.pend=null;res({done:true});}else setTimeout(t,50);};t();
+      return;
+    }
+    const u=new SpeechSynthesisUtterance(text);
+    const v=pickVoice();if(v)u.voice=v;u.lang=v?v.lang:'en-US';u.rate=1;
+    dm.pos=0;const gen=++dm.gen;
+    u.onboundary=e=>{if(dm.gen===gen)dm.pos=e.charIndex;};
+    const fin=()=>{if(dm.gen===gen&&dm.pend===res){dm.pend=null;res({done:true});}};
+    u.onend=fin;
+    u.onerror=e=>{if(e.error==='canceled'||e.error==='interrupted')return;fin();};
+    dm.pend=res;SS.cancel();SS.speak(u);
+    setTimeout(()=>{if(dm.gen===gen&&dm.pend===res){dm.pend=null;SS.cancel();res({done:true});}},Math.max(4000,text.length*120)*dm.spd);
+  });
+}
+async function speakSeg(text,id){
+  let off=0;
+  while(true){
+    if(dm.id!==id)throw 'abort';
+    if(dm.paused){await new Promise(r=>setTimeout(r,100));continue;}
+    const r=await utter(text.slice(off),id);
+    if(r.done)return;
+    off+=r.pos;
+  }
+}
+function dPause(){
+  if(!dm.on)return;
+  if(!dm.paused){
+    dm.paused=true;
+    if(dm.pend){const r=dm.pend;dm.pend=null;if(SS)SS.cancel();r({done:false,pos:dm.pos});}
+    $('#dPause').textContent='▶ Resume';
+  }else{dm.paused=false;$('#dPause').textContent='❚❚ Pause';}
+}
+$('#dPause').addEventListener('click',dPause);
+$('#dClose').addEventListener('click',()=>endDemo(false));
+
+/* completion is remembered for this browser session only; a student who cannot use audio can unlock by reading the whole transcript */
+const KEY='src-demo-done-v1';let memDone=false;
+const getDone=()=>{try{return sessionStorage.getItem(KEY)==='1'||memDone;}catch(_){return memDone;}};
+const setDone=()=>{memDone=true;try{sessionStorage.setItem(KEY,'1');}catch(_){}};
+function renderGate(){
+  const done=getDone();
+  $('#tool').hidden=!(done||dm.on);
+  $('#demoCard').classList.toggle('done',done);
+  $('#gateTitle').textContent=done?'Demo':'Watch the demo to unlock the tool';
+  $('#gateText').textContent=done?'You have completed the demo. Replay it any time. Your work is restored when it ends.':'A narrated walkthrough of about three minutes shows exactly what to click. You can pause it, but you need to watch it to the end before you start.';
+  $('#demoStart').textContent=done?'↻ Replay demo':'▶ Start the demo';
+  $('#altUnlock').hidden=done;
+}
+let altArm=false;
+function checkTr(){
+  if(!altArm)return;
+  const b=$('#demoTranscript');
+  if(b.scrollTop+b.clientHeight>=b.scrollHeight-6){altArm=false;setDone();$('#gateMsg').textContent='Transcript read. The tool is unlocked below.';renderGate();$('#tool').scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});}
+}
+$('#altUnlock').addEventListener('click',()=>{
+  altArm=true;$('#trDet').open=true;$('#gateMsg').textContent='Scroll to the end of the transcript to unlock the tool.';
+  setTimeout(checkTr,50);$('#demoTranscript').focus();
+});
+$('#demoTranscript').addEventListener('scroll',checkTr);
+function snapshot(){
+  return {state:JSON.parse(JSON.stringify(state)),sumText:$('#sumText').value,sumOpen:!$('#sumOut').hidden};
+}
+function restore(s){
+  state=s.state;$('#sumText').value=s.sumText;$('#sumOut').hidden=!s.sumOpen;goto(state.step);
+}
+function endDemo(completed){
+  dm.id++;dm.on=false;dm.paused=false;
+  if(dm.pend){const r=dm.pend;dm.pend=null;r({done:true});}
+  if(SS)SS.cancel();
+  ['#shield','#cur','#dbar'].forEach(s=>{$(s).hidden=true;});
+  document.body.classList.remove('demo-on');
+  $('#dPause').textContent='❚❚ Pause';
+  if(dm.snap){restore(dm.snap);dm.snap=null;}
+  if(completed){setDone();$('#gateMsg').textContent='Demo complete. The tool is unlocked below.';}
+  renderGate();
+  if(completed)$('#tool').scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});
+}
+async function startDemo(){
+  if(dm.on)return;
+  if(window.__stopAud)window.__stopAud();
+  dm.snap=snapshot();dm.replay=getDone();dm.on=true;dm.paused=false;altArm=false;
+  const id=++dm.id;
+  $('#gateMsg').textContent='';
+  state=blank();$('#sumOut').hidden=true;$('#sumText').value='';
+  renderGate();goto(1);
+  window.scrollTo(0,0);
+  document.body.classList.add('demo-on');
+  ['#shield','#cur','#dbar'].forEach(s=>{$(s).hidden=false;});
+  $('#dClose').hidden=!dm.replay;
+  setCur(innerWidth/2,innerHeight/3,0);
+  try{
+    for(let i=0;i<DEMO.length;i++){
+      const s=DEMO[i];
+      if(s.g)dm.group=s.g;
+      $('#dstep').textContent=`Demo · ${dm.group} · ${i+1} of ${DEMO.length}`;
+      $('#dline').textContent=s.t;
+      $('#dprog').style.width=(i/DEMO.length*100)+'%';
+      await Promise.all([speakSeg(s.t,id),s.a?s.a():Promise.resolve()]);
+      await W(250);
+    }
+    $('#dprog').style.width='100%';
+    endDemo(true);
+  }catch(e){if(e!=='abort'){console.error(e);endDemo(false);}}
+}
+$('#demoStart').addEventListener('click',startDemo);
+const sh=$('#shield');
+sh.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+sh.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+window.__demo={start:startDemo,state:()=>state,done:getDone};
+
+renderGate();
+goto(1);
+})();
+</script>
+
+</body></html>
